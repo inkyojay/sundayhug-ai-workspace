@@ -1,497 +1,603 @@
 /**
- * 썬데이허그 AI 에이전트 시스템 - Supervisor 타입 정의
+ * 썬데이허그 AI 에이전트 시스템 - Supervisor 에이전트 타입
  *
- * 에이전트 라우팅, 의도 분류, 워크플로우 오케스트레이션에 필요한 타입을 정의합니다.
+ * LANE 5: Integration & Orchestration
+ * Supervisor 에이전트 전용 타입 정의
  */
 
-import { TaskPayload, TaskResult, AgentResult } from '../../types';
+import { Priority, TaskPayload, AgentContext } from '../../types';
 
-// =============================================================================
-// 의도 분류 관련 타입
-// =============================================================================
-
-/**
- * 의도 카테고리
- */
-export enum IntentCategory {
-  // 주문 관련
-  ORDER_CREATE = 'order_create',
-  ORDER_CANCEL = 'order_cancel',
-  ORDER_MODIFY = 'order_modify',
-  ORDER_REFUND = 'order_refund',
-  ORDER_TRACKING = 'order_tracking',
-
-  // CS 관련
-  CS_INQUIRY = 'cs_inquiry',
-  CS_COMPLAINT = 'cs_complaint',
-  CS_EXCHANGE = 'cs_exchange',
-  CS_RETURN = 'cs_return',
-
-  // 재고 관련
-  INVENTORY_CHECK = 'inventory_check',
-  INVENTORY_UPDATE = 'inventory_update',
-  INVENTORY_ALERT = 'inventory_alert',
-
-  // 회계 관련
-  ACCOUNTING_SETTLEMENT = 'accounting_settlement',
-  ACCOUNTING_REPORT = 'accounting_report',
-  ACCOUNTING_TAX = 'accounting_tax',
-
-  // 마케팅 관련
-  MARKETING_CAMPAIGN = 'marketing_campaign',
-  MARKETING_ANALYSIS = 'marketing_analysis',
-  MARKETING_CONTENT = 'marketing_content',
-
-  // 물류 관련
-  LOGISTICS_SHIPPING = 'logistics_shipping',
-  LOGISTICS_WAREHOUSE = 'logistics_warehouse',
-
-  // 분석 관련
-  ANALYTICS_SALES = 'analytics_sales',
-  ANALYTICS_CUSTOMER = 'analytics_customer',
-  ANALYTICS_PRODUCT = 'analytics_product',
-
-  // 시스템 관련
-  SYSTEM_STATUS = 'system_status',
-  SYSTEM_CONFIG = 'system_config',
-
-  // 기타
-  UNKNOWN = 'unknown',
-  AMBIGUOUS = 'ambiguous',
-}
+// ===========================================================================
+// 라우팅 관련 타입
+// ===========================================================================
 
 /**
- * 추출된 엔티티
- */
-export interface ExtractedEntity {
-  /** 엔티티 타입 */
-  type: EntityType;
-  /** 엔티티 값 */
-  value: string;
-  /** 원본 텍스트 */
-  originalText: string;
-  /** 신뢰도 (0-1) */
-  confidence: number;
-  /** 시작 위치 */
-  startIndex?: number;
-  /** 끝 위치 */
-  endIndex?: number;
-}
-
-/**
- * 엔티티 타입
- */
-export enum EntityType {
-  ORDER_ID = 'order_id',
-  CUSTOMER_ID = 'customer_id',
-  PRODUCT_ID = 'product_id',
-  PRODUCT_NAME = 'product_name',
-  PHONE_NUMBER = 'phone_number',
-  DATE = 'date',
-  AMOUNT = 'amount',
-  QUANTITY = 'quantity',
-  CHANNEL = 'channel',
-  TRACKING_NUMBER = 'tracking_number',
-  ACTION = 'action',
-  STATUS = 'status',
-}
-
-/**
- * 의도 분류 결과
- */
-export interface IntentResult {
-  /** 주요 의도 카테고리 */
-  primaryIntent: IntentCategory;
-  /** 주요 에이전트 ID */
-  primaryAgentId: string;
-  /** 신뢰도 (0-1) */
-  confidence: number;
-  /** 대안 에이전트 목록 */
-  alternativeAgents: {
-    agentId: string;
-    confidence: number;
-    reason: string;
-  }[];
-  /** 추출된 엔티티 */
-  entities: ExtractedEntity[];
-  /** 필요한 추가 컨텍스트 */
-  requiredContext: string[];
-  /** 애매한 요청인지 여부 */
-  isAmbiguous: boolean;
-  /** 명확화가 필요한 경우 질문 */
-  clarificationQuestion?: string;
-  /** 추천 워크플로우 ID */
-  suggestedWorkflowId?: string;
-}
-
-// =============================================================================
-// 에이전트 라우팅 관련 타입
-// =============================================================================
-
-/**
- * 에이전트 정보 (라우팅용)
- */
-export interface AgentInfo {
-  /** 에이전트 ID */
-  id: string;
-  /** 에이전트 이름 */
-  name: string;
-  /** 에이전트 설명 */
-  description: string;
-  /** 담당 의도 카테고리 */
-  categories: IntentCategory[];
-  /** 트리거 키워드 */
-  keywords: string[];
-  /** 우선순위 (높을수록 우선) */
-  priority: number;
-  /** 담당 영역 설명 */
-  scope: string;
-  /** 서브 에이전트 ID 목록 */
-  subAgentIds: string[];
-  /** 활성화 여부 */
-  enabled: boolean;
-}
-
-/**
- * 라우팅 결정
+ * 라우팅 결정 결과
  */
 export interface RoutingDecision {
   /** 대상 에이전트 ID */
-  targetAgentId: string;
-  /** 라우팅 유형 */
-  routingType: RoutingType;
-  /** 신뢰도 */
+  targetAgent: string;
+  /** 신뢰도 (0-1) */
   confidence: number;
+  /** 대안 에이전트 목록 */
+  alternativeAgents: string[];
+  /** 멀티 에이전트 협업 필요 여부 */
+  requiresMultiAgent: boolean;
+  /** 관련 에이전트 목록 (멀티 에이전트 시) */
+  involvedAgents?: string[];
   /** 라우팅 사유 */
-  reason: string;
-  /** 사용자 확인 필요 여부 */
-  needsConfirmation: boolean;
-  /** 확인 옵션 */
-  confirmationOptions?: ConfirmationOption[];
-  /** 워크플로우 실행 여부 */
-  executeWorkflow: boolean;
-  /** 워크플로우 ID */
-  workflowId?: string;
-  /** 전달할 데이터 */
-  payload: Record<string, unknown>;
+  reason: RoutingReason;
+  /** 추가 메타데이터 */
+  metadata?: Record<string, unknown>;
 }
 
 /**
- * 라우팅 유형
+ * 라우팅 사유
  */
-export enum RoutingType {
-  /** 단일 에이전트 직접 라우팅 */
-  DIRECT = 'direct',
-  /** 워크플로우 실행 */
-  WORKFLOW = 'workflow',
-  /** 사용자 선택 필요 */
-  USER_CHOICE = 'user_choice',
-  /** 여러 에이전트 병렬 실행 */
-  PARALLEL = 'parallel',
-  /** 순차 실행 */
-  SEQUENTIAL = 'sequential',
-  /** 조건부 라우팅 */
-  CONDITIONAL = 'conditional',
+export enum RoutingReason {
+  /** 키워드 매칭 */
+  KEYWORD_MATCH = 'keyword_match',
+  /** 엔티티 기반 */
+  ENTITY_BASED = 'entity_based',
+  /** 소스 채널 기반 */
+  SOURCE_BASED = 'source_based',
+  /** 안전 이슈 */
+  SAFETY_ISSUE = 'safety_issue',
+  /** 기본 라우팅 */
+  DEFAULT = 'default',
+  /** VIP 고객 */
+  VIP_CUSTOMER = 'vip_customer',
+  /** 이력 기반 */
+  HISTORY_BASED = 'history_based',
 }
 
 /**
- * 확인 옵션
+ * 키워드 라우팅 규칙
  */
-export interface ConfirmationOption {
-  /** 옵션 ID */
-  id: string;
-  /** 표시 텍스트 */
-  label: string;
-  /** 설명 */
-  description: string;
-  /** 대상 에이전트 ID */
-  agentId: string;
-  /** 아이콘 */
-  icon?: string;
-}
-
-// =============================================================================
-// 키워드 매핑 관련 타입
-// =============================================================================
-
-/**
- * 키워드 매핑 항목
- */
-export interface KeywordMapping {
+export interface KeywordRoutingRule {
   /** 에이전트 ID */
   agentId: string;
   /** 키워드 목록 */
   keywords: string[];
-  /** 키워드 우선순위 */
+  /** 우선순위 (낮을수록 높은 우선순위) */
   priority: number;
-  /** 의도 카테고리 */
-  category: IntentCategory;
 }
 
 /**
- * 중복 키워드 처리 규칙
+ * 엔티티 라우팅 규칙
  */
-export interface AmbiguousKeywordRule {
-  /** 키워드 */
-  keyword: string;
-  /** 컨텍스트별 라우팅 규칙 */
-  contextRules: {
-    /** 컨텍스트 조건 */
-    condition: ContextCondition;
-    /** 대상 에이전트 ID */
-    agentId: string;
-    /** 우선순위 */
-    priority: number;
-  }[];
-  /** 기본 에이전트 (조건 불일치 시) */
-  defaultAgentId: string;
+export interface EntityRoutingRule {
+  /** 엔티티 타입 */
+  entityType: string;
+  /** 패턴 (정규식) */
+  pattern: string;
+  /** 대상 에이전트 ID */
+  targetAgent: string;
 }
 
 /**
- * 컨텍스트 조건
+ * 소스 라우팅 규칙
  */
-export interface ContextCondition {
-  /** 조건 타입 */
-  type: 'entity_exists' | 'entity_value' | 'previous_intent' | 'keyword_present';
-  /** 엔티티 타입 (entity_exists, entity_value인 경우) */
-  entityType?: EntityType;
-  /** 기대 값 (entity_value인 경우) */
-  expectedValue?: string;
-  /** 키워드 (keyword_present인 경우) */
-  keyword?: string;
-  /** 이전 의도 (previous_intent인 경우) */
-  previousIntent?: IntentCategory;
+export interface SourceRoutingRule {
+  /** 소스명 */
+  source: string;
+  /** 주 에이전트 */
+  primary: string;
+  /** 폴백 에이전트 */
+  fallback: string;
 }
 
-// =============================================================================
-// 워크플로우 관련 타입
-// =============================================================================
-
 /**
- * 복합 워크플로우 정의
+ * 라우팅 규칙 설정
  */
-export interface CompositeWorkflow {
-  /** 워크플로우 ID */
-  id: string;
-  /** 워크플로우 이름 */
-  name: string;
-  /** 트리거 키워드/패턴 */
-  triggers: string[];
-  /** 트리거 의도 */
-  triggerIntents: IntentCategory[];
-  /** 워크플로우 단계 */
-  steps: WorkflowStepDefinition[];
-  /** 에러 처리 전략 */
-  errorStrategy: 'stop' | 'skip' | 'retry' | 'rollback';
-  /** 타임아웃 (밀리초) */
-  timeout: number;
-  /** 설명 */
-  description: string;
+export interface RoutingRules {
+  /** 키워드 기반 라우팅 */
+  keywordRouting: KeywordRoutingRule[];
+  /** 엔티티 기반 라우팅 */
+  entityRouting: EntityRoutingRule[];
+  /** 소스 기반 라우팅 */
+  sourceRouting: SourceRoutingRule[];
+  /** 기본 에이전트 */
+  defaultAgent: string;
+  /** 안전 키워드 */
+  safetyKeywords: string[];
+  /** 안전 에이전트 */
+  safetyAgent: string;
 }
 
-/**
- * 워크플로우 단계 정의
- */
-export interface WorkflowStepDefinition {
-  /** 단계 ID */
-  stepId: string;
-  /** 단계 이름 */
-  name: string;
-  /** 담당 에이전트 ID */
-  agentId: string;
-  /** 액션 */
-  action: string;
-  /** 이전 단계에서 전달받을 데이터 매핑 */
-  inputMapping?: Record<string, string>;
-  /** 다음 단계로 전달할 데이터 매핑 */
-  outputMapping?: Record<string, string>;
-  /** 조건부 실행 */
-  condition?: WorkflowConditionDefinition;
-  /** 병렬 실행 가능 여부 */
-  parallel?: boolean;
-  /** 병렬 그룹 ID */
-  parallelGroupId?: string;
-  /** 필수 여부 */
-  required: boolean;
-  /** 재시도 횟수 */
-  maxRetries: number;
-}
+// ===========================================================================
+// 우선순위 관리 타입
+// ===========================================================================
 
 /**
- * 워크플로우 조건 정의
- */
-export interface WorkflowConditionDefinition {
-  /** 조건 타입 */
-  type: 'result_success' | 'result_value' | 'entity_exists' | 'custom';
-  /** 이전 단계 ID */
-  previousStepId?: string;
-  /** 필드 경로 */
-  field?: string;
-  /** 연산자 */
-  operator?: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'contains';
-  /** 비교 값 */
-  value?: unknown;
-  /** 커스텀 조건 함수명 */
-  customFunction?: string;
-}
-
-/**
- * 워크플로우 실행 상태
- */
-export interface WorkflowExecutionState {
-  /** 실행 ID */
-  executionId: string;
-  /** 워크플로우 ID */
-  workflowId: string;
-  /** 현재 단계 인덱스 */
-  currentStepIndex: number;
-  /** 상태 */
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  /** 시작 시간 */
-  startedAt: Date;
-  /** 완료 시간 */
-  completedAt?: Date;
-  /** 단계별 결과 */
-  stepResults: Map<string, TaskResult>;
-  /** 컨텍스트 데이터 */
-  context: Record<string, unknown>;
-  /** 에러 정보 */
-  error?: {
-    stepId: string;
-    message: string;
-    recoverable: boolean;
-  };
-}
-
-// =============================================================================
-// 사용자 요청 관련 타입
-// =============================================================================
-
-/**
- * 사용자 요청
- */
-export interface UserRequest {
-  /** 요청 ID */
-  requestId: string;
-  /** 원본 입력 텍스트 */
-  rawInput: string;
-  /** 정규화된 입력 */
-  normalizedInput: string;
-  /** 요청 시간 */
-  timestamp: Date;
-  /** 사용자 ID */
-  userId?: string;
-  /** 세션 ID */
-  sessionId?: string;
-  /** 이전 요청 ID (대화 연속성) */
-  previousRequestId?: string;
-  /** 추가 컨텍스트 */
-  context?: Record<string, unknown>;
-}
-
-/**
- * Supervisor 응답
- */
-export interface SupervisorResponse {
-  /** 요청 ID */
-  requestId: string;
-  /** 성공 여부 */
-  success: boolean;
-  /** 응답 유형 */
-  responseType: ResponseType;
-  /** 메시지 */
-  message: string;
-  /** 실행된 에이전트 목록 */
-  executedAgents: {
-    agentId: string;
-    result: AgentResult;
-  }[];
-  /** 사용자 선택 필요 여부 */
-  needsUserInput: boolean;
-  /** 선택 옵션 */
-  options?: ConfirmationOption[];
-  /** 다음 추천 액션 */
-  suggestedNextActions?: string[];
-  /** 실행 시간 */
-  executionTime: number;
-}
-
-/**
- * 응답 유형
- */
-export enum ResponseType {
-  /** 직접 처리 완료 */
-  COMPLETED = 'completed',
-  /** 사용자 선택 필요 */
-  NEEDS_SELECTION = 'needs_selection',
-  /** 추가 정보 필요 */
-  NEEDS_INFO = 'needs_info',
-  /** 승인 대기 */
-  PENDING_APPROVAL = 'pending_approval',
-  /** 처리 중 */
-  IN_PROGRESS = 'in_progress',
-  /** 에러 */
-  ERROR = 'error',
-}
-
-// =============================================================================
-// 대화 컨텍스트 관련 타입
-// =============================================================================
-
-/**
- * 대화 컨텍스트
- */
-export interface ConversationContext {
-  /** 세션 ID */
-  sessionId: string;
-  /** 사용자 ID */
-  userId?: string;
-  /** 최근 의도 히스토리 */
-  recentIntents: IntentCategory[];
-  /** 최근 에이전트 히스토리 */
-  recentAgents: string[];
-  /** 활성 엔티티 */
-  activeEntities: Map<EntityType, ExtractedEntity>;
-  /** 진행 중인 워크플로우 */
-  activeWorkflow?: WorkflowExecutionState;
-  /** 세션 시작 시간 */
-  startedAt: Date;
-  /** 마지막 활동 시간 */
-  lastActivityAt: Date;
-  /** 추가 컨텍스트 데이터 */
-  data: Record<string, unknown>;
-}
-
-// =============================================================================
-// 우선순위 관련 타입
-// =============================================================================
-
-/**
- * 요청 우선순위 레벨
+ * 우선순위 레벨
  */
 export enum PriorityLevel {
-  P0_CRITICAL = 0,   // 즉시 처리 (시스템 장애, 긴급 CS)
-  P1_HIGH = 1,       // 높은 우선순위 (고객 불만, 배송 문제)
-  P2_MEDIUM = 2,     // 중간 우선순위 (일반 주문)
-  P3_LOW = 3,        // 낮은 우선순위 (문의, 분석)
-  P4_BACKGROUND = 4, // 백그라운드 (레포트, 배치)
-  P5_DEFERRED = 5,   // 지연 가능 (비긴급 작업)
+  /** 즉시 처리 (5분) */
+  P0_CRITICAL = 0,
+  /** 긴급 처리 (30분) */
+  P1_URGENT = 1,
+  /** 우선 처리 (2시간) */
+  P2_HIGH = 2,
+  /** 일반 처리 (24시간) */
+  P3_NORMAL = 3,
+  /** 낮은 우선순위 (48시간) */
+  P4_LOW = 4,
+  /** 배치 처리 (주간) */
+  P5_BATCH = 5,
+}
+
+/**
+ * 우선순위 SLA 설정
+ */
+export interface PrioritySLA {
+  /** 우선순위 레벨 */
+  level: PriorityLevel;
+  /** 최대 대기 시간 (초) */
+  maxWaitTime: number;
+  /** 동시 처리 수 */
+  concurrentProcessing: number;
+  /** SLA 위반 시 에스컬레이션 여부 */
+  escalationOnBreach: boolean;
+  /** 에스컬레이션 대상 */
+  escalationTarget?: string;
+}
+
+/**
+ * 우선순위 조정 결과
+ */
+export interface PriorityAdjustment {
+  /** 요청 ID */
+  requestId: string;
+  /** 원래 우선순위 */
+  originalPriority: PriorityLevel;
+  /** 조정된 우선순위 */
+  adjustedPriority: PriorityLevel;
+  /** 조정 사유 */
+  reason: string;
+  /** 조정 시각 */
+  adjustedAt: Date;
 }
 
 /**
  * 우선순위 결정 요소
  */
 export interface PriorityFactors {
-  /** 의도 카테고리별 기본 우선순위 */
-  intentPriority: PriorityLevel;
-  /** 키워드 기반 우선순위 조정 */
-  keywordBoost: number;
-  /** 고객 등급 기반 조정 */
-  customerTierBoost: number;
-  /** 금액 기반 조정 */
-  amountBoost: number;
-  /** 시간 기반 조정 (마감 임박 등) */
-  timeBoost: number;
-  /** 최종 우선순위 */
-  finalPriority: PriorityLevel;
+  /** 대기 시간 (밀리초) */
+  waitTime: number;
+  /** 고객 가치 */
+  customerValue: number;
+  /** 반복 불만 여부 */
+  isRepeatComplaint: boolean;
+  /** 감정 점수 (-1 ~ 1) */
+  sentimentScore: number;
+  /** 업무 시간 여부 */
+  isBusinessHours: boolean;
+  /** 재무 영향 금액 */
+  financialImpact?: number;
+  /** VIP 여부 */
+  isVip?: boolean;
+}
+
+// ===========================================================================
+// 오케스트레이션 타입
+// ===========================================================================
+
+/**
+ * 오케스트레이션 패턴
+ */
+export enum OrchestrationPattern {
+  /** 순차 실행 */
+  SEQUENTIAL = 'sequential',
+  /** 병렬 실행 */
+  PARALLEL = 'parallel',
+  /** 분산-수집 */
+  SCATTER_GATHER = 'scatter_gather',
+  /** 사가 패턴 */
+  SAGA = 'saga',
+  /** 이벤트 기반 */
+  EVENT_DRIVEN = 'event_driven',
+}
+
+/**
+ * 오케스트레이션 작업
+ */
+export interface OrchestrationTask {
+  /** 작업 ID */
+  id: string;
+  /** 패턴 */
+  pattern: OrchestrationPattern;
+  /** 관련 에이전트 */
+  agents: string[];
+  /** 입력 데이터 */
+  input: Record<string, unknown>;
+  /** 현재 상태 */
+  status: OrchestrationStatus;
+  /** 시작 시간 */
+  startedAt: Date;
+  /** 완료 시간 */
+  completedAt?: Date;
+  /** 각 에이전트 결과 */
+  results: Map<string, unknown>;
+  /** 에러 정보 */
+  errors?: Map<string, Error>;
+}
+
+/**
+ * 오케스트레이션 상태
+ */
+export enum OrchestrationStatus {
+  PENDING = 'pending',
+  RUNNING = 'running',
+  WAITING = 'waiting',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  PARTIAL = 'partial',
+  CANCELLED = 'cancelled',
+}
+
+// ===========================================================================
+// CEO 커뮤니케이션 타입
+// ===========================================================================
+
+/**
+ * CEO 알림 채널
+ */
+export enum CEONotificationChannel {
+  /** 전화 (긴급) */
+  PHONE = 'phone',
+  /** 카카오톡 (긴급/중요) */
+  KAKAO = 'kakao',
+  /** Slack (일반) */
+  SLACK = 'slack',
+  /** 이메일 (리포트) */
+  EMAIL = 'email',
+  /** 대시보드 (상시) */
+  DASHBOARD = 'dashboard',
+}
+
+/**
+ * CEO 알림 트리거 타입
+ */
+export enum CEOAlertType {
+  /** 안전 이슈 */
+  SAFETY_ISSUE = 'safety_issue',
+  /** 시스템 장애 */
+  SYSTEM_DOWN = 'system_down',
+  /** 법적 긴급 */
+  LEGAL_EMERGENCY = 'legal_emergency',
+  /** VIP 불만 */
+  VIP_COMPLAINT = 'vip_complaint',
+  /** 평판 위기 */
+  REPUTATION_CRISIS = 'reputation_crisis',
+  /** 보안 위반 */
+  SECURITY_BREACH = 'security_breach',
+  /** 환불 승인 */
+  REFUND_APPROVAL = 'refund_approval',
+  /** 캠페인 승인 */
+  CAMPAIGN_APPROVAL = 'campaign_approval',
+  /** 재고 위급 */
+  INVENTORY_CRITICAL = 'inventory_critical',
+  /** 일간 요약 */
+  DAILY_SUMMARY = 'daily_summary',
+  /** 승인 대기 */
+  PENDING_APPROVALS = 'pending_approvals',
+}
+
+/**
+ * CEO 알림 설정
+ */
+export interface CEONotificationConfig {
+  /** 알림 타입 */
+  alertType: CEOAlertType;
+  /** 채널 */
+  channel: CEONotificationChannel;
+  /** 조건 */
+  condition?: string;
+  /** 예약 시간 */
+  scheduledTime?: string;
+}
+
+/**
+ * 승인 요청
+ */
+export interface ApprovalRequest {
+  /** 요청 ID */
+  id: string;
+  /** 요청 타입 */
+  type: string;
+  /** 제목 */
+  title: string;
+  /** 설명 */
+  description: string;
+  /** 요청 에이전트 */
+  requestedBy: string;
+  /** 요청 시간 */
+  requestedAt: Date;
+  /** 긴급도 */
+  urgency: PriorityLevel;
+  /** 기한 */
+  deadline?: Date;
+  /** 옵션 */
+  options: ApprovalOption[];
+  /** AI 추천 */
+  aiRecommendation?: {
+    option: string;
+    reason: string;
+  };
+  /** 관련 데이터 */
+  context: Record<string, unknown>;
+  /** 상태 */
+  status: ApprovalStatus;
+  /** 응답 */
+  response?: ApprovalResponse;
+}
+
+/**
+ * 승인 옵션
+ */
+export interface ApprovalOption {
+  /** 옵션 ID */
+  id: string;
+  /** 라벨 */
+  label: string;
+  /** 장점 */
+  pros: string[];
+  /** 단점 */
+  cons: string[];
+}
+
+/**
+ * 승인 상태
+ */
+export enum ApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  MODIFIED = 'modified',
+  EXPIRED = 'expired',
+}
+
+/**
+ * 승인 응답
+ */
+export interface ApprovalResponse {
+  /** 상태 */
+  status: ApprovalStatus;
+  /** 선택된 옵션 */
+  selectedOption?: string;
+  /** 수정 내용 */
+  modifications?: Record<string, unknown>;
+  /** 코멘트 */
+  comment?: string;
+  /** 응답 시간 */
+  respondedAt: Date;
+}
+
+// ===========================================================================
+// 에스컬레이션 타입
+// ===========================================================================
+
+/**
+ * 에스컬레이션 요청
+ */
+export interface EscalationRequest {
+  /** ID */
+  id: string;
+  /** 요청 에이전트 */
+  fromAgent: string;
+  /** 에스컬레이션 사유 */
+  reason: EscalationReason;
+  /** 원본 요청 */
+  originalRequest: TaskPayload;
+  /** 컨텍스트 */
+  context: Record<string, unknown>;
+  /** 우선순위 */
+  priority: PriorityLevel;
+  /** 요청 시간 */
+  requestedAt: Date;
+  /** 상태 */
+  status: EscalationStatus;
+  /** 처리 결과 */
+  resolution?: EscalationResolution;
+}
+
+/**
+ * 에스컬레이션 사유
+ */
+export enum EscalationReason {
+  /** 승인 필요 */
+  APPROVAL_REQUIRED = 'approval_required',
+  /** 권한 부족 */
+  INSUFFICIENT_PERMISSION = 'insufficient_permission',
+  /** 불확실성 */
+  UNCERTAINTY = 'uncertainty',
+  /** 예외 상황 */
+  EXCEPTIONAL_CASE = 'exceptional_case',
+  /** 고객 요청 */
+  CUSTOMER_REQUEST = 'customer_request',
+  /** SLA 위반 */
+  SLA_BREACH = 'sla_breach',
+  /** 에러 발생 */
+  ERROR_OCCURRED = 'error_occurred',
+}
+
+/**
+ * 에스컬레이션 상태
+ */
+export enum EscalationStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  RESOLVED = 'resolved',
+  FORWARDED = 'forwarded',
+  EXPIRED = 'expired',
+}
+
+/**
+ * 에스컬레이션 해결
+ */
+export interface EscalationResolution {
+  /** 해결 방법 */
+  action: string;
+  /** 해결자 */
+  resolvedBy: string;
+  /** 해결 시간 */
+  resolvedAt: Date;
+  /** 결과 */
+  result: Record<string, unknown>;
+  /** 메모 */
+  notes?: string;
+}
+
+// ===========================================================================
+// 시스템 모니터링 타입
+// ===========================================================================
+
+/**
+ * 에이전트 상태
+ */
+export interface AgentStatus {
+  /** 에이전트 ID */
+  agentId: string;
+  /** 에이전트 이름 */
+  name: string;
+  /** 상태 */
+  status: AgentHealthStatus;
+  /** 마지막 헬스체크 시간 */
+  lastHealthCheck: Date;
+  /** 응답 시간 (밀리초) */
+  responseTime: number;
+  /** 에러율 */
+  errorRate: number;
+  /** 큐 깊이 */
+  queueDepth: number;
+  /** 활성 작업 수 */
+  activeJobs: number;
+}
+
+/**
+ * 에이전트 헬스 상태
+ */
+export enum AgentHealthStatus {
+  HEALTHY = 'healthy',
+  DEGRADED = 'degraded',
+  UNHEALTHY = 'unhealthy',
+  DOWN = 'down',
+  UNKNOWN = 'unknown',
+}
+
+/**
+ * 시스템 상태 리포트
+ */
+export interface SystemStatusReport {
+  /** 타임스탬프 */
+  timestamp: Date;
+  /** 전체 상태 */
+  overallStatus: AgentHealthStatus;
+  /** 에이전트별 상태 */
+  agents: AgentStatus[];
+  /** 큐 상태 */
+  queues: QueueStatus[];
+  /** 메트릭 */
+  metrics: SystemMetrics;
+  /** 알림 */
+  alerts: ActiveAlert[];
+}
+
+/**
+ * 큐 상태
+ */
+export interface QueueStatus {
+  /** 우선순위 레벨 */
+  priority: PriorityLevel;
+  /** 대기 수 */
+  pending: number;
+  /** 처리 중 수 */
+  processing: number;
+  /** 평균 대기 시간 */
+  avgWaitTime: number;
+}
+
+/**
+ * 시스템 메트릭
+ */
+export interface SystemMetrics {
+  /** 요청 처리율 (시간당) */
+  requestsPerHour: number;
+  /** 평균 응답 시간 (밀리초) */
+  avgResponseTime: number;
+  /** 에러율 */
+  errorRate: number;
+  /** 오늘의 에스컬레이션 수 */
+  escalationsToday: number;
+}
+
+/**
+ * 활성 알림
+ */
+export interface ActiveAlert {
+  /** 알림 ID */
+  id: string;
+  /** 심각도 */
+  severity: 'info' | 'warning' | 'error' | 'critical';
+  /** 메시지 */
+  message: string;
+  /** 발생 시간 */
+  occurredAt: Date;
+}
+
+// ===========================================================================
+// 에러 핸들링 타입
+// ===========================================================================
+
+/**
+ * Supervisor 에러 코드
+ */
+export enum SupervisorErrorCode {
+  /** 라우팅 실패 */
+  SUP_001_ROUTING_FAILED = 'SUP-001',
+  /** 에이전트 타임아웃 */
+  SUP_002_AGENT_TIMEOUT = 'SUP-002',
+  /** 큐 오버플로우 */
+  SUP_003_QUEUE_OVERFLOW = 'SUP-003',
+  /** 순환 참조 */
+  SUP_004_CIRCULAR_REFERENCE = 'SUP-004',
+  /** 인증 실패 */
+  SUP_005_AUTH_FAILED = 'SUP-005',
+}
+
+/**
+ * 폴백 설정
+ */
+export interface FallbackConfig {
+  /** 에이전트별 폴백 */
+  agentFallbacks: Map<string, string[]>;
+  /** 기본 폴백 에이전트 */
+  defaultFallback: string;
+  /** 알림 대상 */
+  notifyTarget: CEONotificationChannel;
+}
+
+// ===========================================================================
+// Supervisor 설정 타입
+// ===========================================================================
+
+/**
+ * Supervisor 설정
+ */
+export interface SupervisorConfig {
+  /** 라우팅 규칙 */
+  routingRules: RoutingRules;
+  /** 우선순위 SLA */
+  prioritySLAs: PrioritySLA[];
+  /** CEO 알림 설정 */
+  ceoNotifications: CEONotificationConfig[];
+  /** 폴백 설정 */
+  fallbackConfig: FallbackConfig;
+  /** 헬스체크 간격 (밀리초) */
+  healthCheckInterval: number;
+  /** 리밸런싱 간격 (밀리초) */
+  rebalancingInterval: number;
+  /** 최대 동시 처리 수 */
+  maxConcurrentTasks: number;
 }
