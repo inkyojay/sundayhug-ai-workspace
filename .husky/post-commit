@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 커밋 후 에이전트 마크다운 변경 시 Supabase 동기화
+echo "[husky] Running post-commit hook..."
+
+# 마지막 커밋에서 변경된 에이전트 파일 확인
+CHANGED_AGENTS=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep "docs/agents/.*main\.md" || true)
+
+if [ -n "$CHANGED_AGENTS" ]; then
+    echo "[husky] Agent markdown files changed:"
+    echo "$CHANGED_AGENTS"
+    echo "[husky] Syncing to Supabase..."
+    npm run sync:changed
+else
+    echo "[husky] No agent markdown changes detected."
+fi
