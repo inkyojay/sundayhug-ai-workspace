@@ -1,0 +1,27 @@
+{
+  "name": "sundayhug-ai-workspace",
+  "version": "1.0.0",
+  "description": "> 1인 이커머스 기업을 위한 AI 에이전트 군단 시스템",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkyojay/sundayhug-ai-workspace.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/inkyojay/sundayhug-ai-workspace/issues"
+  },
+  "homepage": "https://github.com/inkyojay/sundayhug-ai-workspace#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "pg": "^8.17.2"
+  }
+}
