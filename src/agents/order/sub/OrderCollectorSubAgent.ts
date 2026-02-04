@@ -18,6 +18,17 @@ import {
   OrderCollectionError,
   OrderCollectionConfig,
 } from '../types';
+import {
+  ApiClientFactory,
+  loadCredentialsFromEnv,
+  CoupangApiClient,
+  NaverApiClient,
+  Cafe24ApiClient,
+  CoupangOrderAdapter,
+  NaverOrderAdapter,
+  Cafe24OrderAdapter,
+} from '../../../infrastructure/api';
+import { featureFlags, FeatureFlag } from '../../../infrastructure/config/FeatureFlags';
 
 /**
  * 수집 설정을 포함한 SubAgent 설정
@@ -32,6 +43,12 @@ interface OrderCollectorConfig extends SubAgentConfig {
  */
 export class OrderCollectorSubAgent extends SubAgent {
   private collectionConfig: OrderCollectionConfig;
+  private apiClientFactory: ApiClientFactory;
+  private adapters: {
+    coupang: CoupangOrderAdapter;
+    naver: NaverOrderAdapter;
+    cafe24: Cafe24OrderAdapter;
+  };
 
   constructor(config: OrderCollectorConfig, collectionConfig?: OrderCollectionConfig) {
     super(config);
@@ -42,6 +59,13 @@ export class OrderCollectorSubAgent extends SubAgent {
       batchSize: 100,
       lookbackHours: 24,
     };
+
+    this.apiClientFactory = new ApiClientFactory();
+    this.adapters = {
+      coupang: new CoupangOrderAdapter(),
+      naver: new NaverOrderAdapter(),
+      cafe24: new Cafe24OrderAdapter(),
+    };
   }
 
   /**
@@ -49,7 +73,23 @@ export class OrderCollectorSubAgent extends SubAgent {
    */
   protected async initialize(): Promise<void> {
     this.logger.info('OrderCollectorSubAgent initializing...');
-    // 채널 API 연결 확인 등 초기화 작업
+
+    // 활성화된 채널에 대해 API 클라이언트 초기화
+    for (const channel of this.collectionConfig.channels) {
+      if (featureFlags.isRealApiEnabled(channel)) {
+        const creds = loadCredentialsFromEnv(channel);
+        if (creds) {
+          try {
+            this.apiClientFactory.createClient(creds);
+            this.logger.info(`API client initialized for ${channel}`);
+          } catch (error) {
+            this.logger.warn(`Failed to initialize API client for ${channel}`, { error });
+          }
+        } else {
+          this.logger.warn(`No credentials found for ${channel}`);
+        }
+      }
+    }
   }
 
   /**
@@ -57,6 +97,7 @@ export class OrderCollectorSubAgent extends SubAgent {
    */
   protected async cleanup(): Promise<void> {
     this.logger.info('OrderCollectorSubAgent cleanup...');
+    this.apiClientFactory.clearAll();
     await this.cleanupSubAgent();
   }
 
@@ -106,13 +147,19 @@ export class OrderCollectorSubAgent extends SubAgent {
     this.logger.info(`Collecting orders from ${channel}...`);
 
     try {
+      // Feature Flag 확인
+      if (!featureFlags.isRealApiEnabled(channel)) {
+        this.logger.info(`Real API disabled for ${channel}, using simulation`);
+        return await this.collectFromChannelSimulation(channel);
+      }
+
       switch (channel) {
         case SalesChannel.COUPANG:
-          return await this.collectFromCoupang();
+          return await this.collectFromCoupangReal();
         case SalesChannel.NAVER:
-          return await this.collectFromNaver();
+          return await this.collectFromNaverReal();
         case SalesChannel.CAFE24:
-          return await this.collectFromCafe24();
+          return await this.collectFromCafe24Real();
         default:
           return await this.collectFromGenericChannel(channel);
       }
@@ -139,89 +186,148 @@ export class OrderCollectorSubAgent extends SubAgent {
   }
 
   /**
-   * 쿠팡 주문 수집
+   * 쿠팡 실제 API 주문 수집
    */
-  private async collectFromCoupang(): Promise<OrderCollectionResult> {
-    // TODO: 실제 쿠팡 API 연동 구현
-    // 현재는 시뮬레이션 데이터 반환
+  private async collectFromCoupangReal(): Promise<OrderCollectionResult> {
+    this.logger.info('Connecting to Coupang API (Real)...');
 
-    this.logger.info('Connecting to Coupang API...');
-
-    // 시뮬레이션: API 호출 시간
-    await this.sleep(500);
+    const client = this.apiClientFactory.getClient(SalesChannel.COUPANG) as CoupangApiClient;
+    if (!client) {
+      throw new Error('Coupang API client not initialized');
+    }
 
     const lookbackTime = new Date(Date.now() - this.collectionConfig.lookbackHours * 60 * 60 * 1000);
+    const now = new Date();
 
-    // DB에서 기존 주문 확인 (실제 구현 시)
-    const db = this.getDatabase('orders');
+    // API에서 주문 조회
+    const rawOrders = await client.getAllOrders(lookbackTime, now);
 
-    // 시뮬레이션 결과
-    const newOrderCount = Math.floor(Math.random() * 10);
-    const updatedOrderCount = Math.floor(Math.random() * 5);
+    // 표준 형식으로 변환
+    const orders = this.adapters.coupang.toBaseOrders(rawOrders);
+
+    // DB에 저장 및 신규/업데이트 분류
+    const { newOrders, updatedOrders, failedOrders, errors } = await this.saveOrdersToDatabase(orders);
 
     this.logger.info(`Coupang collection completed`, {
-      newOrders: newOrderCount,
-      updatedOrders: updatedOrderCount,
+      total: orders.length,
+      newOrders,
+      updatedOrders,
+      failedOrders,
     });
 
     return {
       channel: SalesChannel.COUPANG,
-      success: true,
-      ordersCollected: newOrderCount + updatedOrderCount,
-      newOrders: newOrderCount,
-      updatedOrders: updatedOrderCount,
-      failedOrders: 0,
+      success: errors.length === 0,
+      ordersCollected: orders.length,
+      newOrders,
+      updatedOrders,
+      failedOrders,
+      errors: errors.length > 0 ? errors : undefined,
       collectedAt: new Date(),
     };
   }
 
   /**
-   * 네이버 스마트스토어 주문 수집
+   * 네이버 실제 API 주문 수집
    */
-  private async collectFromNaver(): Promise<OrderCollectionResult> {
-    // TODO: 실제 네이버 커머스 API 연동 구현
+  private async collectFromNaverReal(): Promise<OrderCollectionResult> {
+    this.logger.info('Connecting to Naver Commerce API (Real)...');
 
-    this.logger.info('Connecting to Naver Commerce API...');
-    await this.sleep(500);
+    const client = this.apiClientFactory.getClient(SalesChannel.NAVER) as NaverApiClient;
+    if (!client) {
+      throw new Error('Naver API client not initialized');
+    }
 
-    const newOrderCount = Math.floor(Math.random() * 15);
-    const updatedOrderCount = Math.floor(Math.random() * 8);
+    const lookbackTime = new Date(Date.now() - this.collectionConfig.lookbackHours * 60 * 60 * 1000);
+    const now = new Date();
+
+    // API에서 주문 조회
+    const rawOrders = await client.getAllOrders(lookbackTime, now);
+
+    // 표준 형식으로 변환
+    const orders = this.adapters.naver.toBaseOrders(rawOrders);
+
+    // DB에 저장 및 신규/업데이트 분류
+    const { newOrders, updatedOrders, failedOrders, errors } = await this.saveOrdersToDatabase(orders);
 
     this.logger.info(`Naver collection completed`, {
-      newOrders: newOrderCount,
-      updatedOrders: updatedOrderCount,
+      total: orders.length,
+      newOrders,
+      updatedOrders,
+      failedOrders,
     });
 
     return {
       channel: SalesChannel.NAVER,
-      success: true,
-      ordersCollected: newOrderCount + updatedOrderCount,
-      newOrders: newOrderCount,
-      updatedOrders: updatedOrderCount,
-      failedOrders: 0,
+      success: errors.length === 0,
+      ordersCollected: orders.length,
+      newOrders,
+      updatedOrders,
+      failedOrders,
+      errors: errors.length > 0 ? errors : undefined,
       collectedAt: new Date(),
     };
   }
 
   /**
-   * Cafe24 주문 수집
+   * Cafe24 실제 API 주문 수집
    */
-  private async collectFromCafe24(): Promise<OrderCollectionResult> {
-    // TODO: 실제 Cafe24 API 연동 구현
+  private async collectFromCafe24Real(): Promise<OrderCollectionResult> {
+    this.logger.info('Connecting to Cafe24 API (Real)...');
 
-    this.logger.info('Connecting to Cafe24 API...');
-    await this.sleep(500);
+    const client = this.apiClientFactory.getClient(SalesChannel.CAFE24) as Cafe24ApiClient;
+    if (!client) {
+      throw new Error('Cafe24 API client not initialized');
+    }
 
-    const newOrderCount = Math.floor(Math.random() * 8);
-    const updatedOrderCount = Math.floor(Math.random() * 3);
+    const lookbackTime = new Date(Date.now() - this.collectionConfig.lookbackHours * 60 * 60 * 1000);
+    const now = new Date();
+
+    // API에서 주문 조회
+    const rawOrders = await client.getAllOrders(lookbackTime, now);
+
+    // 표준 형식으로 변환
+    const orders = this.adapters.cafe24.toBaseOrders(rawOrders);
+
+    // DB에 저장 및 신규/업데이트 분류
+    const { newOrders, updatedOrders, failedOrders, errors } = await this.saveOrdersToDatabase(orders);
 
     this.logger.info(`Cafe24 collection completed`, {
+      total: orders.length,
+      newOrders,
+      updatedOrders,
+      failedOrders,
+    });
+
+    return {
+      channel: SalesChannel.CAFE24,
+      success: errors.length === 0,
+      ordersCollected: orders.length,
+      newOrders,
+      updatedOrders,
+      failedOrders,
+      errors: errors.length > 0 ? errors : undefined,
+      collectedAt: new Date(),
+    };
+  }
+
+  /**
+   * 시뮬레이션 모드 주문 수집 (Feature Flag가 꺼져있을 때)
+   */
+  private async collectFromChannelSimulation(channel: SalesChannel): Promise<OrderCollectionResult> {
+    this.logger.info(`Simulating collection from ${channel}...`);
+    await this.sleep(500);
+
+    const newOrderCount = Math.floor(Math.random() * 10);
+    const updatedOrderCount = Math.floor(Math.random() * 5);
+
+    this.logger.info(`${channel} simulation completed`, {
       newOrders: newOrderCount,
       updatedOrders: updatedOrderCount,
     });
 
     return {
-      channel: SalesChannel.CAFE24,
+      channel,
       success: true,
       ordersCollected: newOrderCount + updatedOrderCount,
       newOrders: newOrderCount,
@@ -250,7 +356,96 @@ export class OrderCollectorSubAgent extends SubAgent {
   }
 
   /**
-   * 주문 데이터 정규화
+   * 주문을 DB에 저장하고 결과 반환
+   */
+  private async saveOrdersToDatabase(
+    orders: BaseOrder[]
+  ): Promise<{
+    newOrders: number;
+    updatedOrders: number;
+    failedOrders: number;
+    errors: OrderCollectionError[];
+  }> {
+    let newOrders = 0;
+    let updatedOrders = 0;
+    let failedOrders = 0;
+    const errors: OrderCollectionError[] = [];
+
+    const db = this.getDatabase('orders');
+
+    for (const order of orders) {
+      try {
+        // 기존 주문 확인
+        const { data: existing } = await db
+          .from('orders')
+          .select('id, status')
+          .eq('channel_order_id', order.channelOrderId)
+          .eq('channel', order.channel)
+          .single();
+
+        if (existing) {
+          // 업데이트
+          const { error } = await db
+            .from('orders')
+            .update({
+              status: order.status,
+              updated_at: new Date().toISOString(),
+              metadata: order.metadata,
+            })
+            .eq('id', existing.id);
+
+          if (error) {
+            throw error;
+          }
+          updatedOrders++;
+        } else {
+          // 신규 삽입
+          const { error } = await db.from('orders').insert({
+            id: order.id,
+            channel_order_id: order.channelOrderId,
+            channel: order.channel,
+            status: order.status,
+            ordered_at: order.orderedAt.toISOString(),
+            customer_name: order.customer.name,
+            customer_phone: order.customer.phone,
+            customer_email: order.customer.email,
+            shipping_receiver_name: order.shipping.receiverName,
+            shipping_receiver_phone: order.shipping.receiverPhone,
+            shipping_zip_code: order.shipping.zipCode,
+            shipping_address: order.shipping.address,
+            shipping_address_detail: order.shipping.addressDetail,
+            shipping_memo: order.shipping.memo,
+            total_amount: order.payment.totalAmount,
+            shipping_fee: order.payment.shippingFee,
+            discount_amount: order.payment.discountAmount,
+            paid_at: order.payment.paidAt?.toISOString(),
+            items: order.items,
+            metadata: order.metadata,
+            created_at: new Date().toISOString(),
+          });
+
+          if (error) {
+            throw error;
+          }
+          newOrders++;
+        }
+      } catch (error) {
+        failedOrders++;
+        errors.push({
+          channelOrderId: order.channelOrderId,
+          errorCode: 'DB_SAVE_ERROR',
+          errorMessage: (error as Error).message,
+          retryable: true,
+        });
+        this.logger.error(`Failed to save order ${order.channelOrderId}`, error as Error);
+      }
+    }
+
+    return { newOrders, updatedOrders, failedOrders, errors };
+  }
+
+  /**
+   * 주문 데이터 정규화 (레거시 지원)
    */
   private normalizeOrder(channelOrder: Record<string, unknown>, channel: SalesChannel): Partial<BaseOrder> {
     // 채널별 주문 데이터를 통합 형식으로 변환
