@@ -1,0 +1,51 @@
+{
+  "name": "sundayhug-ai-workspace",
+  "version": "1.0.0",
+  "description": "> 1인 이커머스 기업을 위한 AI 에이전트 군단 시스템",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:agent": "vitest run tests/agents",
+    "test:pipeline": "vitest run tests/integration/pipeline",
+    "test:workflow": "vitest run tests/integration/workflow",
+    "test:architecture": "vitest run tests/integration",
+    "sync": "tsx scripts/sync/index.ts",
+    "sync:all": "tsx scripts/sync/index.ts --all",
+    "sync:changed": "tsx scripts/sync/index.ts --changed",
+    "prepare": "husky",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkyojay/sundayhug-ai-workspace.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/inkyojay/sundayhug-ai-workspace/issues"
+  },
+  "homepage": "https://github.com/inkyojay/sundayhug-ai-workspace#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.1",
+    "@types/node": "^25.0.10",
+    "dotenv": "^17.2.3",
+    "gray-matter": "^4.0.3",
+    "pg": "^8.17.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^3.0.5",
+    "husky": "^9.1.7",
+    "vitest": "^3.0.5"
+  }
+}

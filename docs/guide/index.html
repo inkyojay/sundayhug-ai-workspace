@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>썬데이허그 AI 에이전트 시스템 가이드</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --gray: #6b7280;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--dark);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        nav h1 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        nav .subtitle {
+            font-size: 0.75rem;
+            color: var(--gray);
+            margin-bottom: 30px;
+        }
+
+        nav ul {
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-bottom: 5px;
+        }
+
+        nav ul li a {
+            color: #d1d5db;
+            text-decoration: none;
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        nav ul li a:hover,
+        nav ul li a.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: white;
+        }
+
+        nav .section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin: 20px 0 10px;
+            letter-spacing: 1px;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 260px;
+            padding: 40px 60px;
+            max-width: 1200px;
+        }
+
+        section {
+            margin-bottom: 60px;
+            scroll-margin-top: 20px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: var(--dark);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: var(--dark);
+            margin: 30px 0 15px;
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: var(--gray);
+            margin: 20px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #4b5563;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+        }
+
+        .hero .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card h4 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+
+        .card .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        /* Agent Cards */
+        .agent-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .agent-card.main {
+            border-left-color: var(--primary);
+        }
+
+        .agent-card.sub {
+            border-left-color: var(--secondary);
+            margin-left: 30px;
+            background: #f0fdf4;
+        }
+
+        .agent-card .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .agent-card .agent-id {
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .agent-card.sub .agent-id {
+            background: var(--secondary);
+        }
+
+        .agent-card .agent-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .agent-card .agent-desc {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .agent-card .capabilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .agent-card .capability {
+            background: #e0e7ff;
+            color: var(--primary-dark);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        /* Workflow Diagram */
+        .workflow-diagram {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .workflow-steps {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .workflow-step {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px 20px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .workflow-step.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .workflow-step .step-num {
+            font-size: 0.7rem;
+            color: var(--gray);
+        }
+
+        .workflow-step.active .step-num {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .workflow-arrow {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .code-block .comment {
+            color: #64748b;
+        }
+
+        .code-block .keyword {
+            color: #c084fc;
+        }
+
+        .code-block .string {
+            color: #4ade80;
+        }
+
+        .code-block .function {
+            color: #60a5fa;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: var(--dark);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-left: 4px solid var(--warning);
+            color: #92400e;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-left: 4px solid var(--secondary);
+            color: #166534;
+        }
+
+        /* Architecture Diagram */
+        .architecture {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .arch-layer {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+
+        .arch-layer-title {
+            font-size: 0.75rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .arch-boxes {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .arch-box {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .arch-box.supervisor {
+            background: var(--warning);
+        }
+
+        .arch-box.infra {
+            background: var(--secondary);
+        }
+
+        .arch-arrow {
+            font-size: 1.5rem;
+            color: var(--gray);
+        }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 30px;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step h4 {
+            margin-top: 0;
+            color: var(--dark);
+        }
+
+        /* Collapsible */
+        .collapsible {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .collapsible-header:hover {
+            background: #f9fafb;
+        }
+
+        .collapsible-content {
+            padding: 0 20px 20px;
+            display: none;
+        }
+
+        .collapsible.open .collapsible-content {
+            display: block;
+        }
+
+        .collapsible-icon {
+            transition: transform 0.3s;
+        }
+
+        .collapsible.open .collapsible-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            nav {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>썬데이허그 AI</h1>
+        <div class="subtitle">에이전트 시스템 가이드</div>
+
+        <div class="section-title">시작하기</div>
+        <ul>
+            <li><a href="#overview" class="active">시스템 개요</a></li>
+            <li><a href="#architecture">아키텍처</a></li>
+            <li><a href="#quickstart">빠른 시작</a></li>
+        </ul>
+
+        <div class="section-title">에이전트</div>
+        <ul>
+            <li><a href="#supervisor">Supervisor (00)</a></li>
+            <li><a href="#agents-lane1">LANE 1: Core Operations</a></li>
+            <li><a href="#agents-lane2">LANE 2: Specialized</a></li>
+            <li><a href="#agents-lane3">LANE 3: Management</a></li>
+            <li><a href="#agents-lane4">LANE 4: Analytics</a></li>
+            <li><a href="#all-agents">전체 에이전트 목록</a></li>
+        </ul>
+
+        <div class="section-title">스킬 & MCP</div>
+        <ul>
+            <li><a href="#all-skills">전체 스킬 목록</a></li>
+            <li><a href="#mcp-core">MCP: 핵심 연결</a></li>
+            <li><a href="#mcp-ecommerce">MCP: 이커머스</a></li>
+            <li><a href="#mcp-marketing">MCP: 마케팅</a></li>
+        </ul>
+
+        <div class="section-title">워크플로우</div>
+        <ul>
+            <li><a href="#workflow-concept">워크플로우란?</a></li>
+            <li><a href="#workflow-examples">주요 워크플로우</a></li>
+        </ul>
+
+        <div class="section-title">데이터베이스</div>
+        <ul>
+            <li><a href="#db-overview">DB 개요</a></li>
+            <li><a href="#db-tables">테이블 목록</a></li>
+            <li><a href="#db-usage">DB 사용법</a></li>
+        </ul>
+
+        <div class="section-title">사용 가이드</div>
+        <ul>
+            <li><a href="#how-to-run">시스템 실행 방법</a></li>
+            <li><a href="#request-examples">요청 예시</a></li>
+            <li><a href="#api-usage">API 사용법</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>썬데이허그 AI 에이전트 시스템</h1>
+            <p>1인 이커머스 기업을 위한 AI 에이전트 군단<br>
+            "회사는 잠들지 않고 성장한다"</p>
+            <span class="badge">17개 메인 에이전트 | 53개 서브 에이전트 | 21개 워크플로우</span>
+        </div>
+
+        <!-- 시스템 개요 -->
+        <section id="overview">
+            <h2>시스템 개요</h2>
+
+            <p>썬데이허그 AI 에이전트 시스템은 <strong>1인 이커머스 기업이 대기업 수준의 운영 효율</strong>을 달성할 수 있도록 설계된 AI 자동화 플랫폼입니다.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">🎯</div>
+                    <h4>목표</h4>
+                    <p>대표님이 자는 동안에도 AI 에이전트들이 주문 처리, 고객 응대, 마케팅을 자동으로 수행합니다.</p>
+                </div>
+                <div class="card">
+                    <div class="icon">🛒</div>
+                    <h4>비즈니스</h4>
+                    <p>육아용품 이커머스 (0-24개월)<br>쿠팡, 네이버, 자사몰 3개 채널 운영</p>
+                </div>
+                <div class="card">
+                    <div class="icon">🤖</div>
+                    <h4>규모</h4>
+                    <p>17개 메인 에이전트<br>53개 서브 에이전트<br>총 70개의 전문 AI</p>
+                </div>
+            </div>
+
+            <h3>핵심 가치</h3>
+            <table>
+                <tr>
+                    <th>가치</th>
+                    <th>설명</th>
+                </tr>
+                <tr>
+                    <td>🛡️ 안전 최우선</td>
+                    <td>육아용품의 특성상 안전 관련 이슈는 최우선 처리</td>
+                </tr>
+                <tr>
+                    <td>💬 진정성</td>
+                    <td>부모의 마음으로 진심을 담은 고객 응대</td>
+                </tr>
+                <tr>
+                    <td>🤝 신뢰</td>
+                    <td>정확한 정보 제공, 약속한 서비스 이행</td>
+                </tr>
+                <tr>
+                    <td>❤️ 공감</td>
+                    <td>육아의 어려움을 이해하고 공감하는 커뮤니케이션</td>
+                </tr>
+                <tr>
+                    <td>⚡ 효율</td>
+                    <td>빠르고 정확한 업무 처리로 시간 절약</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- 아키텍처 -->
+        <section id="architecture">
+            <h2>시스템 아키텍처</h2>
+
+            <div class="architecture">
+                <div class="arch-layer">
+                    <div class="arch-layer-title">👤 의사결정 레이어</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box" style="background: #374151;">CEO (대표님)</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">⬇️</div>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">🎯 오케스트레이션 레이어</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box supervisor">Supervisor Agent</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">⬇️</div>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">🤖 에이전트 레이어 (17개 메인 에이전트)</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box">Order</div>
+                        <div class="arch-box">CS</div>
+                        <div class="arch-box">Marketing</div>
+                        <div class="arch-box">Inventory</div>
+                        <div class="arch-box">Accounting</div>
+                        <div class="arch-box">Analytics</div>
+                        <div class="arch-box">+11 more</div>
+                    </div>
+                </div>
+
+                <div class="arch-arrow">⬇️</div>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">🗄️ 인프라 레이어</div>
+                    <div class="arch-boxes">
+                        <div class="arch-box infra">Supabase DB</div>
+                        <div class="arch-box infra">쿠팡 API</div>
+                        <div class="arch-box infra">네이버 API</div>
+                        <div class="arch-box infra">Slack</div>
+                        <div class="arch-box infra">카카오톡</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 핵심 개념:</strong> 모든 요청은 Supervisor를 통해 적절한 에이전트로 라우팅됩니다. Supervisor는 "교통 경찰" 역할을 합니다.
+            </div>
+        </section>
+
+        <!-- 빠른 시작 -->
+        <section id="quickstart">
+            <h2>빠른 시작 가이드</h2>
+
+            <div class="steps">
+                <div class="step">
+                    <h4>프로젝트 클론</h4>
+                    <div class="code-block">
+<span class="comment"># 저장소 클론</span>
+git clone https://github.com/inkyojay/sundayhug-ai-workspace.git
+cd sundayhug-ai-workspace
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h4>의존성 설치</h4>
+                    <div class="code-block">
+<span class="comment"># npm 패키지 설치</span>
+npm install
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h4>환경 변수 설정</h4>
+                    <div class="code-block">
+<span class="comment"># .env 파일 생성</span>
+cp .env.example .env
+
+<span class="comment"># .env 파일 편집</span>
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-key
+ANTHROPIC_API_KEY=sk-ant-...
+                    </div>
+                </div>
+
+                <div class="step">
+                    <h4>시스템 실행</h4>
+                    <div class="code-block">
+<span class="comment"># 개발 모드 실행</span>
+npm run dev
+
+<span class="comment"># 또는 빌드 후 실행</span>
+npm run build
+npm start
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Supervisor 에이전트 -->
+        <section id="supervisor">
+            <h2>Supervisor Agent (00)</h2>
+
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">00</span>
+                    <span class="agent-name">Supervisor Agent</span>
+                </div>
+                <p class="agent-desc">시스템의 "교통 경찰" - 모든 요청의 진입점이자 중앙 오케스트레이터</p>
+                <div class="capabilities">
+                    <span class="capability">요청 라우팅</span>
+                    <span class="capability">의도 분석</span>
+                    <span class="capability">우선순위 관리</span>
+                    <span class="capability">워크플로우 조율</span>
+                    <span class="capability">승인 관리</span>
+                </div>
+            </div>
+
+            <h3>Supervisor의 역할</h3>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>1️⃣ 요청 분석</h4>
+                    <p>사용자 입력을 분석하여 의도(Intent)를 파악합니다.</p>
+                    <div class="code-block">
+<span class="string">"주문번호 ORD-001 환불해줘"</span>
+→ Intent: <span class="keyword">REFUND</span>
+→ Entity: orderId = <span class="string">"ORD-001"</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>2️⃣ 라우팅 결정</h4>
+                    <p>어떤 에이전트가 처리해야 할지 결정합니다.</p>
+                    <div class="code-block">
+Intent: REFUND
+→ Agent: <span class="keyword">Order Agent</span>
+→ SubAgent: <span class="function">ReturnExchange</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>3️⃣ 워크플로우 실행</h4>
+                    <p>복잡한 작업은 여러 에이전트가 협업합니다.</p>
+                    <div class="code-block">
+Workflow: FULL_REFUND
+1. Order → 환불 검증
+2. Accounting → 정산 처리
+3. CS → 고객 알림
+                    </div>
+                </div>
+            </div>
+
+            <h3>라우팅 유형</h3>
+            <table>
+                <tr>
+                    <th>유형</th>
+                    <th>설명</th>
+                    <th>예시</th>
+                </tr>
+                <tr>
+                    <td><strong>DIRECT</strong></td>
+                    <td>단일 에이전트로 직접 전달</td>
+                    <td>"재고 확인해줘" → Inventory Agent</td>
+                </tr>
+                <tr>
+                    <td><strong>WORKFLOW</strong></td>
+                    <td>여러 에이전트 순차 실행</td>
+                    <td>"전체 환불" → Order → Accounting → CS</td>
+                </tr>
+                <tr>
+                    <td><strong>PARALLEL</strong></td>
+                    <td>여러 에이전트 동시 실행</td>
+                    <td>"전 채널 주문 수집" → 쿠팡+네이버+자사몰</td>
+                </tr>
+                <tr>
+                    <td><strong>USER_CHOICE</strong></td>
+                    <td>사용자 선택 필요</td>
+                    <td>"리뷰 관리" → CS? Marketing?</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- LANE 1: Core Operations -->
+        <section id="agents-lane1">
+            <h2>LANE 1: Core Operations</h2>
+            <p>핵심 운영 에이전트 - 주문, CS, 마케팅, 재고, 물류</p>
+
+            <!-- Order Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">01</span>
+                    <span class="agent-name">Order Agent</span>
+                </div>
+                <p class="agent-desc">주문 수집, 배송 관리, 반품/교환 처리</p>
+                <div class="capabilities">
+                    <span class="capability">collectOrdersFromChannel</span>
+                    <span class="capability">registerTrackingNumber</span>
+                    <span class="capability">processReturnExchange</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 5분마다 | 타임아웃: 5분</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">OrderCollectorSubAgent</span></div>
+                <p class="agent-desc">Coupang, Naver, Cafe24에서 주문 데이터 수집</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ShippingManagerSubAgent</span></div>
+                <p class="agent-desc">송장등록, 배송추적, 배송완료 처리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ReturnExchangeSubAgent</span></div>
+                <p class="agent-desc">반품접수, 수거요청, 환불처리</p>
+            </div>
+
+            <!-- CS Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">02</span>
+                    <span class="agent-name">CS Agent</span>
+                </div>
+                <p class="agent-desc">고객 문의 응대, 리뷰 관리, AS 처리, VOC 분석</p>
+                <div class="capabilities">
+                    <span class="capability">generateInquiryResponse</span>
+                    <span class="capability">generateReviewReply</span>
+                    <span class="capability">createASRequest</span>
+                    <span class="capability">generateVOCReport</span>
+                    <span class="capability">submitClaim</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 3분마다 | 자동응답 신뢰도: 85%</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">InquiryResponderSubAgent</span></div>
+                <p class="agent-desc">카톡/게시판/이메일 문의 자동응답</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ReviewManagerSubAgent</span></div>
+                <p class="agent-desc">리뷰수집, 감정분석, 답변생성</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ASHandlerSubAgent</span></div>
+                <p class="agent-desc">AS접수, 진행추적, 완료안내</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">VOCAnalyzerSubAgent</span></div>
+                <p class="agent-desc">클레임분류, 패턴분석, 인사이트 도출</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ClaimProcessorSubAgent</span></div>
+                <p class="agent-desc">클레임 접수 및 해결</p>
+            </div>
+
+            <!-- Marketing Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">03</span>
+                    <span class="agent-name">Marketing Agent</span>
+                </div>
+                <p class="agent-desc">마케팅 전략 수립 및 실행 - 광고, 콘텐츠, CRM, 프로모션</p>
+                <div class="capabilities">
+                    <span class="capability">generateDailyReport</span>
+                    <span class="capability">analyzePerformance</span>
+                    <span class="capability">createContent</span>
+                    <span class="capability">optimizeCampaigns</span>
+                    <span class="capability">executeCRMCampaign</span>
+                    <span class="capability">analyzeTrends</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">목표 ROAS: 3.0 | 일일 예산: 50만원</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PerformanceSubAgent</span></div>
+                <p class="agent-desc">광고 데이터 수집, ROAS 분석, 예산 최적화</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ContentSubAgent</span></div>
+                <p class="agent-desc">카드뉴스, 블로그, SNS 콘텐츠 제작</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">CRMSubAgent</span></div>
+                <p class="agent-desc">고객 세그먼트, 알림톡 발송, 재구매 유도</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PromotionSubAgent</span></div>
+                <p class="agent-desc">프로모션 기획, 쿠폰 관리, 성과 분석</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">InfluencerSubAgent</span></div>
+                <p class="agent-desc">인플루언서 발굴, 컨택, 시딩</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">SocialListeningSubAgent</span></div>
+                <p class="agent-desc">커뮤니티 모니터링, 트렌드 분석</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">BrandSubAgent</span></div>
+                <p class="agent-desc">PR, 브랜드 콜라보, 스토리텔링</p>
+            </div>
+
+            <!-- Inventory Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">04</span>
+                    <span class="agent-name">Inventory Agent</span>
+                </div>
+                <p class="agent-desc">채널별 재고 동기화, 발주 관리, 원가 분석</p>
+                <div class="capabilities">
+                    <span class="capability">syncChannelStock</span>
+                    <span class="capability">createPurchaseOrder</span>
+                    <span class="capability">getProductCost</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 10분마다 | 안전재고: 3일분</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">StockSyncSubAgent</span></div>
+                <p class="agent-desc">채널별 재고 실시간 동기화 (Coupang, Naver, Cafe24)</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PurchaseOrderSubAgent</span></div>
+                <p class="agent-desc">발주제안, 발주서생성, 입고추적</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">CostAnalyzerSubAgent</span></div>
+                <p class="agent-desc">원가계산, 마진분석, 가격제안</p>
+            </div>
+
+            <!-- Logistics Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">05</span>
+                    <span class="agent-name">Logistics Agent</span>
+                </div>
+                <p class="agent-desc">3PL 관리, 배송 최적화, 품질 관리</p>
+                <div class="capabilities">
+                    <span class="capability">recommendCourier</span>
+                    <span class="capability">getQualityKPI</span>
+                    <span class="capability">compareFulfillmentCenters</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 15분마다 | 목표 온타임율: 95%</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ThreePLManagerSubAgent</span></div>
+                <p class="agent-desc">풀필먼트 성과추적</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ShippingOptimizerSubAgent</span></div>
+                <p class="agent-desc">배송비분석, 업체비교</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">QualityControlSubAgent</span></div>
+                <p class="agent-desc">지연/파손 모니터링</p>
+            </div>
+        </section>
+
+        <!-- LANE 2: Specialized Services -->
+        <section id="agents-lane2">
+            <h2>LANE 2: Specialized Services</h2>
+            <p>전문화 서비스 에이전트 - 상세페이지, 미디어</p>
+
+            <!-- DetailPage Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">06</span>
+                    <span class="agent-name">DetailPage Agent</span>
+                </div>
+                <p class="agent-desc">상세페이지 제작 및 최적화</p>
+                <div class="capabilities">
+                    <span class="capability">createDetailPage</span>
+                    <span class="capability">optimizeDetailPage</span>
+                    <span class="capability">runABTest</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">자동 SEO 최적화 | 전환율 임계값: 2%</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PlanningSubAgent</span></div>
+                <p class="agent-desc">상세페이지 구성안 작성, 경쟁사 벤치마킹</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ProductionSubAgent</span></div>
+                <p class="agent-desc">카피 작성, 레이아웃 생성, 이미지 배치</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">OptimizationSubAgent</span></div>
+                <p class="agent-desc">A/B 테스트, 전환율 분석, 개선 제안</p>
+            </div>
+
+            <!-- Media Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">07</span>
+                    <span class="agent-name">Media Agent</span>
+                </div>
+                <p class="agent-desc">미디어 자산 관리 - 촬영 스케줄, 에셋 라이브러리, 편집</p>
+                <div class="capabilities">
+                    <span class="capability">manageShootingSchedule</span>
+                    <span class="capability">organizeAssets</span>
+                    <span class="capability">editMedia</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">기본 품질: 85 | 최대 파일: 50MB</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ShootingManagementSubAgent</span></div>
+                <p class="agent-desc">촬영 스케줄 관리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">AssetManagementSubAgent</span></div>
+                <p class="agent-desc">에셋 라이브러리 관리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">EditingSubAgent</span></div>
+                <p class="agent-desc">이미지/영상 편집</p>
+            </div>
+        </section>
+
+        <!-- LANE 3: Management & Compliance -->
+        <section id="agents-lane3">
+            <h2>LANE 3: Management & Compliance</h2>
+            <p>관리 및 컴플라이언스 에이전트 - 회계, 법무, IP, 지원사업</p>
+
+            <!-- Accounting Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">08</span>
+                    <span class="agent-name">Accounting Agent</span>
+                </div>
+                <p class="agent-desc">매출정산, 비용관리, 세무, 손익분석</p>
+                <div class="capabilities">
+                    <span class="capability">settleRevenue</span>
+                    <span class="capability">manageExpenses</span>
+                    <span class="capability">calculateTaxes</span>
+                    <span class="capability">analyzeProfit</span>
+                    <span class="capability">generateMonthlyClose</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 매일 오전 9시 | 타임아웃: 10분</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">RevenueSettlementSubAgent</span></div>
+                <p class="agent-desc">채널별 매출 정산</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ExpenseManagementSubAgent</span></div>
+                <p class="agent-desc">비용 관리 및 분류</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">TaxSubAgent</span></div>
+                <p class="agent-desc">세무 신고, 세금 계산</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ProfitAnalysisSubAgent</span></div>
+                <p class="agent-desc">손익 분석, 수익성 리포팅</p>
+            </div>
+
+            <!-- Legal Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">09</span>
+                    <span class="agent-name">Legal Agent</span>
+                </div>
+                <p class="agent-desc">인증관리, 광고심의, 규정준수</p>
+                <div class="capabilities">
+                    <span class="capability">checkCertifications</span>
+                    <span class="capability">reviewAdCopy</span>
+                    <span class="capability">performComplianceAudit</span>
+                    <span class="capability">generateComplianceReport</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 매주 월요일 오전 8시</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">CertificationSubAgent</span></div>
+                <p class="agent-desc">인증 관리 및 만료 알림</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">AdReviewSubAgent</span></div>
+                <p class="agent-desc">광고 카피 검수 및 심의</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ComplianceSubAgent</span></div>
+                <p class="agent-desc">규정준수 검사 및 리포팅</p>
+            </div>
+
+            <!-- IP Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">10</span>
+                    <span class="agent-name">IP Agent</span>
+                </div>
+                <p class="agent-desc">지식재산권 관리 - 권리관리, 침해감시, 대응</p>
+                <div class="capabilities">
+                    <span class="capability">manageIPRights</span>
+                    <span class="capability">scanInfringement</span>
+                    <span class="capability">takeAction</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 매일 오전 10시 | 타임아웃: 15분</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">IPManagementSubAgent</span></div>
+                <p class="agent-desc">IP 권리 관리 및 모니터링</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">InfringementMonitoringSubAgent</span></div>
+                <p class="agent-desc">침해 행위 감시</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">InfringementResponseSubAgent</span></div>
+                <p class="agent-desc">침해 대응 및 조치</p>
+            </div>
+
+            <!-- BizSupport Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">11</span>
+                    <span class="agent-name">BizSupport Agent</span>
+                </div>
+                <p class="agent-desc">지원사업 모니터링, 신청지원, 사후관리</p>
+                <div class="capabilities">
+                    <span class="capability">scanPrograms</span>
+                    <span class="capability">analyzeFit</span>
+                    <span class="capability">prepareApplication</span>
+                    <span class="capability">trackExecution</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 월/수/금 오전 9시</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">SupportMonitoringSubAgent</span></div>
+                <p class="agent-desc">지원사업 프로그램 모니터링</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ApplicationSupportSubAgent</span></div>
+                <p class="agent-desc">지원사업 신청 지원</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PostManagementSubAgent</span></div>
+                <p class="agent-desc">지원사업 사후관리</p>
+            </div>
+        </section>
+
+        <!-- LANE 4: Analytics & Growth -->
+        <section id="agents-lane4">
+            <h2>LANE 4: Analytics & Growth</h2>
+            <p>분석 및 성장 에이전트 - 데이터분석, 위기관리, 로열티, 파트너십, 제품</p>
+
+            <!-- Analytics Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">12</span>
+                    <span class="agent-name">Analytics Agent</span>
+                </div>
+                <p class="agent-desc">데이터 분석, KPI 집계, 리포트 생성, 예측 분석</p>
+                <div class="capabilities">
+                    <span class="capability">generateDashboard</span>
+                    <span class="capability">generateReport</span>
+                    <span class="capability">forecastMetrics</span>
+                    <span class="capability">detectAnomalies</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 30분마다</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">DashboardSubAgent</span></div>
+                <p class="agent-desc">실시간 대시보드 생성</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ReportSubAgent</span></div>
+                <p class="agent-desc">정기 리포트 생성</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ForecastSubAgent</span></div>
+                <p class="agent-desc">예측 분석</p>
+            </div>
+
+            <!-- Crisis Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">13</span>
+                    <span class="agent-name">Crisis Agent</span>
+                </div>
+                <p class="agent-desc">위기 감지, 대응, 복구</p>
+                <div class="capabilities">
+                    <span class="capability">detectCrisis</span>
+                    <span class="capability">respondToCrisis</span>
+                    <span class="capability">recoverFromCrisis</span>
+                    <span class="capability">generateCrisisReport</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 5분마다 | 타임아웃: 3분</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">MonitoringSubAgent</span></div>
+                <p class="agent-desc">악성리뷰/이슈 감지</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ResponseSubAgent</span></div>
+                <p class="agent-desc">자동 대응 실행</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">RecoverySubAgent</span></div>
+                <p class="agent-desc">사후 복구</p>
+            </div>
+
+            <!-- Loyalty Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">14</span>
+                    <span class="agent-name">Loyalty Agent</span>
+                </div>
+                <p class="agent-desc">고객 로열티 관리 - 멤버십, 포인트, VIP 케어</p>
+                <div class="capabilities">
+                    <span class="capability">manageMembership</span>
+                    <span class="capability">managePoints</span>
+                    <span class="capability">careVIP</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 매일 자정</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">MembershipSubAgent</span></div>
+                <p class="agent-desc">멤버십 관리 및 등급 관리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PointSubAgent</span></div>
+                <p class="agent-desc">포인트 적립, 사용, 정책 관리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">VIPSubAgent</span></div>
+                <p class="agent-desc">VIP 고객 관리 및 특별 케어</p>
+            </div>
+
+            <!-- Partnership Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">15</span>
+                    <span class="agent-name">Partnership Agent</span>
+                </div>
+                <p class="agent-desc">제휴/파트너십 관리 - B2B, 도매, 공동구매</p>
+                <div class="capabilities">
+                    <span class="capability">managePartners</span>
+                    <span class="capability">processB2B</span>
+                    <span class="capability">runGroupBuying</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 매일 오전 9시</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">B2BSubAgent</span></div>
+                <p class="agent-desc">B2B 납품 관리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">WholesaleSubAgent</span></div>
+                <p class="agent-desc">도매/총판 관리</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">GroupBuyingSubAgent</span></div>
+                <p class="agent-desc">공동구매 운영</p>
+            </div>
+
+            <!-- Product Agent -->
+            <div class="agent-card main">
+                <div class="agent-header">
+                    <span class="agent-id">16</span>
+                    <span class="agent-name">Product Agent</span>
+                </div>
+                <p class="agent-desc">제품 기획 - 시장조사, 제품기획, 피드백 분석</p>
+                <div class="capabilities">
+                    <span class="capability">researchMarket</span>
+                    <span class="capability">planProduct</span>
+                    <span class="capability">analyzeFeedback</span>
+                </div>
+                <p style="font-size:0.8rem;color:#666;margin-top:10px;">스케줄: 매주 월요일 오전 9시</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">ResearchSubAgent</span></div>
+                <p class="agent-desc">시장조사 및 경쟁사 분석</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">PlanningSubAgent</span></div>
+                <p class="agent-desc">제품 기획 및 로드맵</p>
+            </div>
+            <div class="agent-card sub">
+                <div class="agent-header"><span class="agent-id">SUB</span><span class="agent-name">FeedbackAnalysisSubAgent</span></div>
+                <p class="agent-desc">고객 피드백 수집 및 분석</p>
+            </div>
+        </section>
+
+        <!-- 전체 에이전트 목록 -->
+        <section id="all-agents">
+            <h2>전체 에이전트 목록</h2>
+
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>에이전트</th>
+                    <th>역할</th>
+                    <th>서브 에이전트</th>
+                </tr>
+                <tr>
+                    <td>00</td>
+                    <td>Supervisor</td>
+                    <td>라우팅, 오케스트레이션</td>
+                    <td>Router, Monitor</td>
+                </tr>
+                <tr>
+                    <td>01</td>
+                    <td>Order</td>
+                    <td>주문 처리</td>
+                    <td>Collector, Shipping, ReturnExchange</td>
+                </tr>
+                <tr>
+                    <td>02</td>
+                    <td>CS</td>
+                    <td>고객 서비스</td>
+                    <td>Inquiry, Claim, Review, VOC, AS</td>
+                </tr>
+                <tr>
+                    <td>03</td>
+                    <td>Marketing</td>
+                    <td>마케팅</td>
+                    <td>Performance, Content, Influencer, CRM, Promotion, Social, Brand</td>
+                </tr>
+                <tr>
+                    <td>04</td>
+                    <td>DetailPage</td>
+                    <td>상세페이지</td>
+                    <td>Planning, Production, Optimization</td>
+                </tr>
+                <tr>
+                    <td>05</td>
+                    <td>Inventory</td>
+                    <td>재고 관리</td>
+                    <td>Sync, PurchaseOrder, Cost</td>
+                </tr>
+                <tr>
+                    <td>06</td>
+                    <td>Accounting</td>
+                    <td>회계/정산</td>
+                    <td>Revenue, Expense, Tax, Profit</td>
+                </tr>
+                <tr>
+                    <td>07</td>
+                    <td>BizSupport</td>
+                    <td>정부 지원사업</td>
+                    <td>Monitoring, Application, Post</td>
+                </tr>
+                <tr>
+                    <td>08</td>
+                    <td>Product</td>
+                    <td>제품 기획</td>
+                    <td>Research, Planning, Feedback</td>
+                </tr>
+                <tr>
+                    <td>09</td>
+                    <td>Legal</td>
+                    <td>법무/인증</td>
+                    <td>Certification, AdReview, Compliance</td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td>IP</td>
+                    <td>지재권 관리</td>
+                    <td>Rights, Monitoring, Response</td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td>Analytics</td>
+                    <td>데이터 분석</td>
+                    <td>Dashboard, Report, Prediction</td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td>Crisis</td>
+                    <td>위기 관리</td>
+                    <td>Monitoring, Response, Recovery</td>
+                </tr>
+                <tr>
+                    <td>13</td>
+                    <td>Logistics</td>
+                    <td>물류/배송</td>
+                    <td>3PL, Optimization, Quality</td>
+                </tr>
+                <tr>
+                    <td>14</td>
+                    <td>Media</td>
+                    <td>미디어/콘텐츠</td>
+                    <td>Shooting, Asset, Editing</td>
+                </tr>
+                <tr>
+                    <td>15</td>
+                    <td>Partnership</td>
+                    <td>제휴/B2B</td>
+                    <td>B2B, Wholesale, Joint</td>
+                </tr>
+                <tr>
+                    <td>16</td>
+                    <td>Loyalty</td>
+                    <td>멤버십/VIP</td>
+                    <td>Membership, Points, VIP</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- 워크플로우 개념 -->
+        <section id="workflow-concept">
+            <h2>워크플로우란?</h2>
+
+            <p>워크플로우는 <strong>여러 에이전트가 순차적으로 협업</strong>하여 복잡한 작업을 완료하는 자동화된 프로세스입니다.</p>
+
+            <div class="alert alert-info">
+                <strong>💡 예시:</strong> "전체 환불"은 단순히 돈을 돌려주는 게 아닙니다. 주문 검증 → 정산 처리 → 재고 복구 → 고객 알림까지 여러 단계가 필요합니다.
+            </div>
+
+            <h3>워크플로우 동작 원리</h3>
+
+            <div class="workflow-diagram">
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="step-num">STEP 1</div>
+                        <strong>Order Agent</strong><br>
+                        <small>환불 검증</small>
+                    </div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">
+                        <div class="step-num">STEP 2</div>
+                        <strong>Accounting</strong><br>
+                        <small>정산 처리</small>
+                    </div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">
+                        <div class="step-num">STEP 3</div>
+                        <strong>Inventory</strong><br>
+                        <small>재고 복구</small>
+                    </div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step active">
+                        <div class="step-num">STEP 4</div>
+                        <strong>CS Agent</strong><br>
+                        <small>고객 알림</small>
+                    </div>
+                </div>
+            </div>
+
+            <h3>워크플로우 vs 직접 호출</h3>
+            <table>
+                <tr>
+                    <th>구분</th>
+                    <th>직접 호출 (DIRECT)</th>
+                    <th>워크플로우 (WORKFLOW)</th>
+                </tr>
+                <tr>
+                    <td>에이전트 수</td>
+                    <td>1개</td>
+                    <td>2개 이상</td>
+                </tr>
+                <tr>
+                    <td>예시</td>
+                    <td>"재고 확인해줘"</td>
+                    <td>"전체 환불 처리해줘"</td>
+                </tr>
+                <tr>
+                    <td>복잡도</td>
+                    <td>단순</td>
+                    <td>복합</td>
+                </tr>
+                <tr>
+                    <td>실행</td>
+                    <td>즉시</td>
+                    <td>순차적</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- 주요 워크플로우 -->
+        <section id="workflow-examples">
+            <h2>주요 워크플로우</h2>
+
+            <div class="collapsible open">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📦 주문 처리 워크플로우</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <p>신규 주문이 들어왔을 때 자동으로 처리하는 흐름</p>
+                    <div class="workflow-diagram">
+                        <div class="workflow-steps">
+                            <div class="workflow-step">Order<br><small>주문 수집</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Inventory<br><small>재고 확인</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Logistics<br><small>배송 준비</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">CS<br><small>알림 발송</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>💰 환불 처리 워크플로우</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <p>고객의 환불 요청을 처리하는 흐름</p>
+                    <div class="workflow-diagram">
+                        <div class="workflow-steps">
+                            <div class="workflow-step">Order<br><small>환불 검증</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Accounting<br><small>정산 처리</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Inventory<br><small>재고 복구</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">CS<br><small>완료 알림</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📞 CS 문의 워크플로우</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <p>고객 문의를 자동으로 분류하고 응대하는 흐름</p>
+                    <div class="workflow-diagram">
+                        <div class="workflow-steps">
+                            <div class="workflow-step">CS<br><small>문의 분류</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">CS<br><small>자동 응답</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">필요시<br><small>에스컬레이션</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📈 마케팅 캠페인 워크플로우</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <p>마케팅 캠페인을 기획하고 실행하는 흐름</p>
+                    <div class="workflow-diagram">
+                        <div class="workflow-steps">
+                            <div class="workflow-step">Marketing<br><small>캠페인 기획</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Media<br><small>콘텐츠 제작</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Marketing<br><small>광고 집행</small></div>
+                            <span class="workflow-arrow">→</span>
+                            <div class="workflow-step">Analytics<br><small>성과 분석</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 전체 스킬 목록 -->
+        <section id="all-skills">
+            <h2>전체 스킬 목록</h2>
+            <p>에이전트별로 사용 가능한 모든 스킬(기능)을 정리한 목록입니다.</p>
+
+            <div class="collapsible open">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>🎯 BaseAgent 기본 스킬 (모든 에이전트 공통)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>execute(context)</td><td>에이전트 실행</td></tr>
+                        <tr><td>getStatus()</td><td>상태 조회</td></tr>
+                        <tr><td>sendNotification(priority, recipient, title, message)</td><td>알림 발송</td></tr>
+                        <tr><td>requestApproval(title, description, data)</td><td>승인 요청</td></tr>
+                        <tr><td>log(level, message, data)</td><td>로깅</td></tr>
+                        <tr><td>addEventListener / removeEventListener</td><td>이벤트 리스너 관리</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>🔧 SubAgent 추가 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>executeTask(task)</td><td>단일 작업 실행</td></tr>
+                        <tr><td>executeTasksParallel(tasks, chunkSize)</td><td>병렬 작업 실행</td></tr>
+                        <tr><td>executeTasksSequential(tasks)</td><td>순차 작업 실행</td></tr>
+                        <tr><td>setProgress(percentage, message)</td><td>진행률 업데이트</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>🎯 Supervisor 고유 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>decideRouting(request)</td><td>라우팅 결정</td></tr>
+                        <tr><td>determinePriority(request, factors)</td><td>우선순위 결정 (P0~P5)</td></tr>
+                        <tr><td>adjustPriority(requestId, currentPriority, factors)</td><td>우선순위 동적 조정</td></tr>
+                        <tr><td>generateStatusReport()</td><td>시스템 상태 리포트</td></tr>
+                        <tr><td>getEscalationQueue()</td><td>에스컬레이션 큐 조회</td></tr>
+                        <tr><td>getPendingApprovals()</td><td>대기 중인 승인 조회</td></tr>
+                        <tr><td>performHealthChecks()</td><td>헬스체크 수행</td></tr>
+                        <tr><td>rebalanceQueues()</td><td>큐 리밸런싱</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📦 Order Agent 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>collectOrdersFromChannel(channel)</td><td>특정 채널에서 주문 수집</td></tr>
+                        <tr><td>registerTrackingNumber(request)</td><td>송장 등록</td></tr>
+                        <tr><td>processReturnExchange(request)</td><td>반품/교환 처리</td></tr>
+                        <tr><td>getOrderConfig()</td><td>설정 조회</td></tr>
+                        <tr><td>updateOrderConfig(updates)</td><td>설정 업데이트</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>💬 CS Agent 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>generateInquiryResponse(inquiryId)</td><td>문의 응답 생성</td></tr>
+                        <tr><td>generateReviewReply(reviewId)</td><td>리뷰 답변 생성</td></tr>
+                        <tr><td>createASRequest(request)</td><td>AS 요청 생성</td></tr>
+                        <tr><td>generateVOCReport(period)</td><td>VOC 리포트 생성</td></tr>
+                        <tr><td>submitClaim(claim)</td><td>클레임 제출</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📢 Marketing Agent 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>generateDailyReport()</td><td>일일 리포트 생성</td></tr>
+                        <tr><td>analyzePerformance(data)</td><td>성과 분석</td></tr>
+                        <tr><td>createContent(data)</td><td>콘텐츠 생성</td></tr>
+                        <tr><td>optimizeCampaigns(data)</td><td>캠페인 최적화</td></tr>
+                        <tr><td>executeCRMCampaign(data)</td><td>CRM 캠페인 실행</td></tr>
+                        <tr><td>analyzeTrends(data)</td><td>트렌드 분석</td></tr>
+                        <tr><td>manageInfluencers(data)</td><td>인플루언서 관리</td></tr>
+                        <tr><td>managePromotions(data)</td><td>프로모션 관리</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📊 Analytics Agent 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>generateDashboard(config)</td><td>대시보드 생성</td></tr>
+                        <tr><td>generateReport(config)</td><td>리포트 생성</td></tr>
+                        <tr><td>forecastMetrics(request)</td><td>메트릭 예측</td></tr>
+                        <tr><td>detectAnomalies(data)</td><td>이상 탐지</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>🚨 Crisis Agent 스킬</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>스킬</th><th>설명</th></tr>
+                        <tr><td>detectCrisis(monitoring)</td><td>위기 감지</td></tr>
+                        <tr><td>respondToCrisis(event)</td><td>위기 대응</td></tr>
+                        <tr><td>recoverFromCrisis(event)</td><td>위기 복구</td></tr>
+                        <tr><td>generateCrisisReport()</td><td>위기 리포트</td></tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- MCP 핵심 연결 -->
+        <section id="mcp-core">
+            <h2>MCP: 핵심 연결</h2>
+            <p>Model Context Protocol로 연결된 핵심 외부 서비스입니다.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">🗄️</div>
+                    <h4>Supabase</h4>
+                    <p><strong>역할:</strong> PostgreSQL DB, 실시간 구독, 인증</p>
+                    <p><strong>인증:</strong> Bearer Token</p>
+                    <p><strong>Rate Limit:</strong> 100 req/sec</p>
+                    <div class="capabilities">
+                        <span class="capability">query</span>
+                        <span class="capability">insert</span>
+                        <span class="capability">update</span>
+                        <span class="capability">delete</span>
+                        <span class="capability">rpc</span>
+                        <span class="capability">realtime_subscribe</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">📝</div>
+                    <h4>Notion</h4>
+                    <p><strong>역할:</strong> 문서 관리, 지식베이스</p>
+                    <p><strong>인증:</strong> Bearer Token</p>
+                    <p><strong>Rate Limit:</strong> 3 req/sec</p>
+                    <div class="capabilities">
+                        <span class="capability">search</span>
+                        <span class="capability">get_page</span>
+                        <span class="capability">create_page</span>
+                        <span class="capability">query_database</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">💬</div>
+                    <h4>Slack</h4>
+                    <p><strong>역할:</strong> 팀 알림, 내부 커뮤니케이션</p>
+                    <p><strong>인증:</strong> OAuth2</p>
+                    <p><strong>Rate Limit:</strong> 50 req/min</p>
+                    <div class="capabilities">
+                        <span class="capability">send_message</span>
+                        <span class="capability">update_message</span>
+                        <span class="capability">create_thread</span>
+                        <span class="capability">add_reaction</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">💛</div>
+                    <h4>Kakao</h4>
+                    <p><strong>역할:</strong> 알림톡/친구톡 발송</p>
+                    <p><strong>인증:</strong> Bearer Token</p>
+                    <div class="capabilities">
+                        <span class="capability">send_alimtalk</span>
+                        <span class="capability">send_friendtalk</span>
+                        <span class="capability">get_message_status</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MCP 이커머스 -->
+        <section id="mcp-ecommerce">
+            <h2>MCP: 이커머스 플랫폼</h2>
+            <p>쿠팡, 네이버, 자사몰 연동을 위한 API 연결입니다.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">🛒</div>
+                    <h4>Coupang Wing</h4>
+                    <p><strong>역할:</strong> 쿠팡 오픈마켓 API</p>
+                    <p><strong>인증:</strong> HMAC-SHA256</p>
+                    <p><strong>Rate Limit:</strong> 60 req/min, 일 10,000건</p>
+                    <div class="capabilities">
+                        <span class="capability">get_orders</span>
+                        <span class="capability">get_order_details</span>
+                        <span class="capability">register_tracking_number</span>
+                        <span class="capability">get_inventory</span>
+                        <span class="capability">update_inventory</span>
+                        <span class="capability">process_return</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">🟢</div>
+                    <h4>Naver Commerce</h4>
+                    <p><strong>역할:</strong> 네이버 스마트스토어 API</p>
+                    <p><strong>인증:</strong> OAuth2</p>
+                    <p><strong>Rate Limit:</strong> 10 req/sec, 일 50,000건</p>
+                    <div class="capabilities">
+                        <span class="capability">get_orders</span>
+                        <span class="capability">update_order_status</span>
+                        <span class="capability">register_tracking</span>
+                        <span class="capability">get_products</span>
+                        <span class="capability">update_product_inventory</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">🏪</div>
+                    <h4>Cafe24</h4>
+                    <p><strong>역할:</strong> 자사몰 API</p>
+                    <p><strong>인증:</strong> OAuth2</p>
+                    <p><strong>Rate Limit:</strong> 5 req/sec, 일 30,000건</p>
+                    <div class="capabilities">
+                        <span class="capability">get_orders</span>
+                        <span class="capability">update_order_status</span>
+                        <span class="capability">register_tracking_number</span>
+                        <span class="capability">get_products</span>
+                        <span class="capability">get_customer_info</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MCP 마케팅 -->
+        <section id="mcp-marketing">
+            <h2>MCP: 마케팅 플랫폼</h2>
+            <p>광고 및 마케팅 분석을 위한 플랫폼 연동입니다.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">📘</div>
+                    <h4>Meta Business</h4>
+                    <p><strong>역할:</strong> Facebook/Instagram 광고, 콘텐츠</p>
+                    <p><strong>인증:</strong> OAuth2</p>
+                    <p><strong>Rate Limit:</strong> 200 req/hour</p>
+                    <div class="capabilities">
+                        <span class="capability">get_campaigns</span>
+                        <span class="capability">get_campaign_insights</span>
+                        <span class="capability">create_campaign</span>
+                        <span class="capability">upload_media</span>
+                        <span class="capability">publish_post</span>
+                        <span class="capability">get_comments</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">🔍</div>
+                    <h4>Naver Search Ads</h4>
+                    <p><strong>역할:</strong> 네이버 검색광고</p>
+                    <p><strong>인증:</strong> HMAC-SHA256</p>
+                    <p><strong>Rate Limit:</strong> 10 req/sec</p>
+                    <div class="capabilities">
+                        <span class="capability">get_campaigns</span>
+                        <span class="capability">get_campaign_report</span>
+                        <span class="capability">update_campaign_budget</span>
+                        <span class="capability">get_keyword_performance</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">🔴</div>
+                    <h4>Google Services</h4>
+                    <p><strong>역할:</strong> Analytics, Sheets, Ads</p>
+                    <p><strong>인증:</strong> OAuth2 (Service Account)</p>
+                    <p><strong>Rate Limit:</strong> 600 req/min</p>
+                    <div class="capabilities">
+                        <span class="capability">get_analytics_data</span>
+                        <span class="capability">get_real_time_data</span>
+                        <span class="capability">append_spreadsheet</span>
+                        <span class="capability">get_ads_performance</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="icon">🎨</div>
+                    <h4>OpenAI</h4>
+                    <p><strong>역할:</strong> DALL-E 이미지 생성, GPT</p>
+                    <p><strong>인증:</strong> Bearer Token</p>
+                    <p><strong>Rate Limit:</strong> 50 req/min</p>
+                    <div class="capabilities">
+                        <span class="capability">create_image</span>
+                        <span class="capability">create_chat_completion</span>
+                        <span class="capability">create_embedding</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>배송 추적 API</h3>
+            <div class="card">
+                <div class="icon">🚚</div>
+                <h4>Delivery Tracking</h4>
+                <p><strong>역할:</strong> 택배사 배송 조회 (CJ, 한진, 롯데, 로젠, 우체국)</p>
+                <p><strong>인증:</strong> Bearer Token</p>
+                <div class="capabilities">
+                    <span class="capability">get_shipment_info</span>
+                    <span class="capability">get_tracking_status</span>
+                    <span class="capability">get_last_location</span>
+                    <span class="capability">estimate_delivery_date</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 데이터베이스 개요 -->
+        <section id="db-overview">
+            <h2>데이터베이스 개요</h2>
+
+            <p>썬데이허그 AI 에이전트 시스템은 <strong>Supabase (PostgreSQL)</strong>를 사용하여 모든 데이터를 저장합니다.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">🗄️</div>
+                    <h4>총 80개 테이블</h4>
+                    <p>주문, 고객, 재고, 에이전트 실행 로그, 워크플로우 등 모든 데이터 저장</p>
+                </div>
+                <div class="card">
+                    <div class="icon">🔒</div>
+                    <h4>RLS 보안</h4>
+                    <p>Row Level Security로 데이터 접근 권한 관리</p>
+                </div>
+                <div class="card">
+                    <div class="icon">⚡</div>
+                    <h4>실시간 구독</h4>
+                    <p>Supabase Realtime으로 데이터 변경 실시간 감지</p>
+                </div>
+            </div>
+
+            <h3>LANE별 테이블 구성</h3>
+            <table>
+                <tr>
+                    <th>LANE</th>
+                    <th>영역</th>
+                    <th>주요 테이블</th>
+                    <th>테이블 수</th>
+                </tr>
+                <tr>
+                    <td>공통</td>
+                    <td>시스템/에이전트</td>
+                    <td>agents, workflows, task_queue, notifications</td>
+                    <td>~15개</td>
+                </tr>
+                <tr>
+                    <td>LANE 1</td>
+                    <td>Core Operations</td>
+                    <td>orders, customers, inventory, cs_tickets</td>
+                    <td>~12개</td>
+                </tr>
+                <tr>
+                    <td>LANE 2</td>
+                    <td>Marketing & Content</td>
+                    <td>ad_campaigns, marketing_contents, detail_pages, media_assets</td>
+                    <td>~19개</td>
+                </tr>
+                <tr>
+                    <td>LANE 3</td>
+                    <td>Management & Compliance</td>
+                    <td>expenses, tax_filings, intellectual_properties, support_programs</td>
+                    <td>~12개</td>
+                </tr>
+                <tr>
+                    <td>LANE 4</td>
+                    <td>Analytics & Growth</td>
+                    <td>analytics_dashboards, crisis_events, partnerships, vip_customers</td>
+                    <td>~10개</td>
+                </tr>
+                <tr>
+                    <td>LANE 5</td>
+                    <td>Integration & Orchestration</td>
+                    <td>agent_executions, workflow_executions, system_alerts, schedules</td>
+                    <td>~12개</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- 테이블 목록 -->
+        <section id="db-tables">
+            <h2>주요 테이블 목록</h2>
+
+            <div class="collapsible open">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📦 주문/고객 테이블</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>테이블</th><th>설명</th><th>주요 컬럼</th></tr>
+                        <tr><td>orders</td><td>주문 정보</td><td>id, channel, status, customer_id, total_amount</td></tr>
+                        <tr><td>order_items</td><td>주문 상품</td><td>order_id, product_id, quantity, price</td></tr>
+                        <tr><td>customers</td><td>고객 정보</td><td>id, name, phone, email, total_orders</td></tr>
+                        <tr><td>cs_tickets</td><td>CS 문의</td><td>id, type, status, customer_id, content</td></tr>
+                        <tr><td>reviews</td><td>리뷰</td><td>id, product_id, rating, content, sentiment</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>📊 마케팅/콘텐츠 테이블</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>테이블</th><th>설명</th><th>주요 컬럼</th></tr>
+                        <tr><td>ad_campaigns</td><td>광고 캠페인</td><td>id, platform, status, budget, roas</td></tr>
+                        <tr><td>ad_metrics</td><td>광고 성과</td><td>campaign_id, date, impressions, clicks, cost</td></tr>
+                        <tr><td>marketing_contents</td><td>마케팅 콘텐츠</td><td>id, type, title, status, scheduled_at</td></tr>
+                        <tr><td>influencers</td><td>인플루언서</td><td>id, name, platform, followers, tier</td></tr>
+                        <tr><td>detail_pages</td><td>상세페이지</td><td>id, product_id, channel, html_content</td></tr>
+                        <tr><td>media_assets</td><td>미디어 자산</td><td>id, type, file_path, tags, product_ids</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>💰 회계/법무 테이블 (LANE 3)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>테이블</th><th>설명</th><th>주요 컬럼</th></tr>
+                        <tr><td>expenses</td><td>비용 내역</td><td>id, category, amount, expense_date, status</td></tr>
+                        <tr><td>tax_filings</td><td>세금 신고</td><td>id, tax_type, period, tax_amount, status</td></tr>
+                        <tr><td>profit_reports</td><td>수익 분석</td><td>id, period, revenue, cost, net_profit</td></tr>
+                        <tr><td>ad_reviews</td><td>광고 심의</td><td>id, content_type, issues_found, risk_level</td></tr>
+                        <tr><td>compliance_checks</td><td>규정 준수</td><td>id, check_type, compliance_score, issues</td></tr>
+                        <tr><td>intellectual_properties</td><td>지재권</td><td>id, ip_type, name, registration_number</td></tr>
+                        <tr><td>ip_infringements</td><td>침해 감시</td><td>id, ip_id, platform, severity, status</td></tr>
+                        <tr><td>support_programs</td><td>지원사업</td><td>id, program_name, organization, deadline</td></tr>
+                        <tr><td>support_applications</td><td>지원 신청</td><td>id, program_id, status, approved_amount</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>🤖 에이전트/워크플로우 테이블 (LANE 5)</span>
+                    <span class="collapsible-icon">▼</span>
+                </div>
+                <div class="collapsible-content">
+                    <table>
+                        <tr><th>테이블</th><th>설명</th><th>주요 컬럼</th></tr>
+                        <tr><td>agents</td><td>에이전트 정의</td><td>id, agent_code, name, category, status</td></tr>
+                        <tr><td>agent_executions</td><td>실행 로그</td><td>id, agent_id, status, started_at, duration_ms</td></tr>
+                        <tr><td>workflows</td><td>워크플로우 정의</td><td>id, workflow_code, name, steps, is_active</td></tr>
+                        <tr><td>workflow_executions</td><td>워크플로우 실행</td><td>id, workflow_id, status, current_step_id</td></tr>
+                        <tr><td>workflow_step_executions</td><td>단계별 실행</td><td>id, execution_id, step_id, status</td></tr>
+                        <tr><td>schedules</td><td>스케줄 정의</td><td>id, name, cron_expression, agent_id, action</td></tr>
+                        <tr><td>system_alerts</td><td>시스템 알림</td><td>id, alert_type, severity, title, status</td></tr>
+                        <tr><td>health_checks</td><td>헬스체크</td><td>id, service_name, status, response_time_ms</td></tr>
+                        <tr><td>api_call_logs</td><td>API 호출 로그</td><td>id, service_name, endpoint, response_status</td></tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- DB 사용법 -->
+        <section id="db-usage">
+            <h2>데이터베이스 사용법</h2>
+
+            <h3>1. Supabase 클라이언트 설정</h3>
+            <div class="code-block">
+<span class="keyword">import</span> { createClient } <span class="keyword">from</span> <span class="string">'@supabase/supabase-js'</span>;
+
+<span class="comment">// Supabase 클라이언트 생성</span>
+<span class="keyword">const</span> supabase = <span class="function">createClient</span>(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+            </div>
+
+            <h3>2. 데이터 조회 (SELECT)</h3>
+            <div class="code-block">
+<span class="comment">// 오늘 주문 조회</span>
+<span class="keyword">const</span> { data: orders, error } = <span class="keyword">await</span> supabase
+  .<span class="function">from</span>(<span class="string">'orders'</span>)
+  .<span class="function">select</span>(<span class="string">'*'</span>)
+  .<span class="function">gte</span>(<span class="string">'created_at'</span>, <span class="string">'2024-01-26'</span>)
+  .<span class="function">order</span>(<span class="string">'created_at'</span>, { ascending: <span class="keyword">false</span> });
+
+<span class="comment">// 채널별 주문 수</span>
+<span class="keyword">const</span> { data: stats } = <span class="keyword">await</span> supabase
+  .<span class="function">from</span>(<span class="string">'orders'</span>)
+  .<span class="function">select</span>(<span class="string">'channel, count(*)'</span>)
+  .<span class="function">group</span>(<span class="string">'channel'</span>);
+            </div>
+
+            <h3>3. 데이터 삽입 (INSERT)</h3>
+            <div class="code-block">
+<span class="comment">// 에이전트 실행 로그 기록</span>
+<span class="keyword">const</span> { data, error } = <span class="keyword">await</span> supabase
+  .<span class="function">from</span>(<span class="string">'agent_executions'</span>)
+  .<span class="function">insert</span>({
+    id: <span class="string">'exec-001'</span>,
+    agent_id: <span class="string">'order-agent'</span>,
+    agent_name: <span class="string">'Order Agent'</span>,
+    status: <span class="string">'running'</span>,
+    started_at: <span class="keyword">new</span> Date()
+  });
+            </div>
+
+            <h3>4. 데이터 업데이트 (UPDATE)</h3>
+            <div class="code-block">
+<span class="comment">// 주문 상태 변경</span>
+<span class="keyword">const</span> { data, error } = <span class="keyword">await</span> supabase
+  .<span class="function">from</span>(<span class="string">'orders'</span>)
+  .<span class="function">update</span>({ status: <span class="string">'shipping'</span> })
+  .<span class="function">eq</span>(<span class="string">'id'</span>, <span class="string">'ORD-001'</span>);
+
+<span class="comment">// 에이전트 실행 완료 처리</span>
+<span class="keyword">const</span> { data, error } = <span class="keyword">await</span> supabase
+  .<span class="function">from</span>(<span class="string">'agent_executions'</span>)
+  .<span class="function">update</span>({
+    status: <span class="string">'completed'</span>,
+    completed_at: <span class="keyword">new</span> Date(),
+    duration_ms: 1500
+  })
+  .<span class="function">eq</span>(<span class="string">'id'</span>, <span class="string">'exec-001'</span>);
+            </div>
+
+            <h3>5. 실시간 구독 (Realtime)</h3>
+            <div class="code-block">
+<span class="comment">// 새 주문 실시간 감지</span>
+<span class="keyword">const</span> subscription = supabase
+  .<span class="function">channel</span>(<span class="string">'new-orders'</span>)
+  .<span class="function">on</span>(
+    <span class="string">'postgres_changes'</span>,
+    { event: <span class="string">'INSERT'</span>, schema: <span class="string">'public'</span>, table: <span class="string">'orders'</span> },
+    (payload) => {
+      <span class="function">console.log</span>(<span class="string">'새 주문:'</span>, payload.new);
+      <span class="comment">// Order Agent 호출</span>
+    }
+  )
+  .<span class="function">subscribe</span>();
+            </div>
+
+            <h3>6. 트랜잭션 (RPC)</h3>
+            <div class="code-block">
+<span class="comment">// 환불 처리 (트랜잭션)</span>
+<span class="keyword">const</span> { data, error } = <span class="keyword">await</span> supabase
+  .<span class="function">rpc</span>(<span class="string">'process_refund'</span>, {
+    order_id: <span class="string">'ORD-001'</span>,
+    refund_amount: 50000,
+    reason: <span class="string">'고객 요청'</span>
+  });
+            </div>
+
+            <div class="alert alert-success">
+                <strong>💡 팁:</strong> Supabase 대시보드에서 SQL Editor를 사용하면 직접 쿼리를 실행하고 테스트할 수 있습니다.
+            </div>
+
+            <h3>Supabase 대시보드 접속</h3>
+            <div class="steps">
+                <div class="step">
+                    <h4><a href="https://supabase.com/dashboard" target="_blank">supabase.com/dashboard</a> 접속</h4>
+                    <p>로그인 후 프로젝트 선택</p>
+                </div>
+                <div class="step">
+                    <h4>Table Editor에서 데이터 확인</h4>
+                    <p>80개 테이블의 데이터를 GUI로 조회/수정 가능</p>
+                </div>
+                <div class="step">
+                    <h4>SQL Editor에서 쿼리 실행</h4>
+                    <p>복잡한 쿼리나 분석용 SQL 직접 실행</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 시스템 실행 방법 -->
+        <section id="how-to-run">
+            <h2>시스템 실행 방법</h2>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ 사전 요구사항:</strong> Node.js 18+, Supabase 프로젝트, Anthropic API 키가 필요합니다.
+            </div>
+
+            <h3>방법 1: 개발 모드 실행</h3>
+            <div class="code-block">
+<span class="comment"># 터미널에서 실행</span>
+cd sundayhug-ai-workspace
+npm run dev
+
+<span class="comment"># 출력 예시</span>
+🚀 썬데이허그 AI 에이전트 시스템 시작...
+✅ 데이터베이스 연결 성공
+✅ 에이전트 레지스트리 초기화 완료
+✅ Supervisor 에이전트 시작
+🎉 시스템 준비 완료!
+            </div>
+
+            <h3>방법 2: 프로덕션 배포</h3>
+            <div class="code-block">
+<span class="comment"># 빌드</span>
+npm run build
+
+<span class="comment"># PM2로 실행 (권장)</span>
+pm2 start dist/index.js --name sundayhug-ai
+
+<span class="comment"># 또는 직접 실행</span>
+npm start
+            </div>
+
+            <h3>방법 3: Docker 사용</h3>
+            <div class="code-block">
+<span class="comment"># Docker 이미지 빌드</span>
+docker build -t sundayhug-ai .
+
+<span class="comment"># 컨테이너 실행</span>
+docker run -d --env-file .env sundayhug-ai
+            </div>
+        </section>
+
+        <!-- 요청 예시 -->
+        <section id="request-examples">
+            <h2>요청 예시</h2>
+
+            <p>Supervisor에게 요청을 보내면 자동으로 적절한 에이전트로 라우팅됩니다.</p>
+
+            <h3>주문 관련</h3>
+            <table>
+                <tr>
+                    <th>요청</th>
+                    <th>라우팅</th>
+                    <th>처리</th>
+                </tr>
+                <tr>
+                    <td>"오늘 주문 몇 건이야?"</td>
+                    <td>Order Agent</td>
+                    <td>주문 통계 조회</td>
+                </tr>
+                <tr>
+                    <td>"주문번호 ORD-001 환불해줘"</td>
+                    <td>Workflow: REFUND</td>
+                    <td>환불 프로세스 실행</td>
+                </tr>
+                <tr>
+                    <td>"쿠팡 신규 주문 수집해줘"</td>
+                    <td>Order > Collector</td>
+                    <td>쿠팡 API 호출</td>
+                </tr>
+            </table>
+
+            <h3>고객 서비스</h3>
+            <table>
+                <tr>
+                    <th>요청</th>
+                    <th>라우팅</th>
+                    <th>처리</th>
+                </tr>
+                <tr>
+                    <td>"오늘 들어온 문의 확인해줘"</td>
+                    <td>CS Agent</td>
+                    <td>문의 목록 조회</td>
+                </tr>
+                <tr>
+                    <td>"악성 리뷰 모니터링해줘"</td>
+                    <td>CS > Review</td>
+                    <td>부정 리뷰 감지</td>
+                </tr>
+                <tr>
+                    <td>"배송 지연 고객에게 사과 메시지 보내줘"</td>
+                    <td>CS > Inquiry</td>
+                    <td>자동 메시지 발송</td>
+                </tr>
+            </table>
+
+            <h3>재고/물류</h3>
+            <table>
+                <tr>
+                    <th>요청</th>
+                    <th>라우팅</th>
+                    <th>처리</th>
+                </tr>
+                <tr>
+                    <td>"재고 부족 상품 알려줘"</td>
+                    <td>Inventory Agent</td>
+                    <td>저재고 상품 조회</td>
+                </tr>
+                <tr>
+                    <td>"A 상품 발주서 만들어줘"</td>
+                    <td>Inventory > PO</td>
+                    <td>발주서 생성</td>
+                </tr>
+                <tr>
+                    <td>"전 채널 재고 동기화해줘"</td>
+                    <td>Inventory > Sync</td>
+                    <td>쿠팡/네이버/자사몰 동기화</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- API 사용법 -->
+        <section id="api-usage">
+            <h2>API 사용법</h2>
+
+            <h3>TypeScript/JavaScript에서 사용</h3>
+            <div class="code-block">
+<span class="keyword">import</span> { SupervisorAgent } <span class="keyword">from</span> <span class="string">'./agents/supervisor'</span>;
+
+<span class="comment">// Supervisor 인스턴스 생성</span>
+<span class="keyword">const</span> supervisor = <span class="keyword">new</span> <span class="function">SupervisorAgent</span>();
+
+<span class="comment">// 요청 처리</span>
+<span class="keyword">const</span> response = <span class="keyword">await</span> supervisor.<span class="function">processRequest</span>({
+  requestId: <span class="string">'req-001'</span>,
+  rawInput: <span class="string">'오늘 주문 몇 건이야?'</span>,
+  timestamp: <span class="keyword">new</span> Date(),
+  userId: <span class="string">'ceo'</span>
+});
+
+<span class="function">console.log</span>(response.message);
+<span class="comment">// "오늘 총 47건의 주문이 접수되었습니다."</span>
+            </div>
+
+            <h3>REST API 엔드포인트 (구현 예정)</h3>
+            <div class="code-block">
+<span class="comment"># 요청 전송</span>
+POST /api/request
+{
+  "message": "오늘 주문 몇 건이야?",
+  "userId": "ceo"
+}
+
+<span class="comment"># 응답</span>
+{
+  "success": true,
+  "message": "오늘 총 47건의 주문이 접수되었습니다.",
+  "executedAgent": "order",
+  "data": {
+    "totalOrders": 47,
+    "byChannel": {
+      "coupang": 25,
+      "naver": 15,
+      "cafe24": 7
+    }
+  }
+}
+            </div>
+
+            <h3>직접 에이전트 호출</h3>
+            <div class="code-block">
+<span class="keyword">import</span> { OrderAgent } <span class="keyword">from</span> <span class="string">'./agents/order'</span>;
+<span class="keyword">import</span> { CSAgent } <span class="keyword">from</span> <span class="string">'./agents/cs'</span>;
+
+<span class="comment">// Order Agent 직접 호출</span>
+<span class="keyword">const</span> orderAgent = <span class="keyword">new</span> <span class="function">OrderAgent</span>();
+<span class="keyword">const</span> orders = <span class="keyword">await</span> orderAgent.<span class="function">execute</span>({
+  action: <span class="string">'getOrders'</span>,
+  channel: <span class="string">'coupang'</span>,
+  date: <span class="string">'2024-01-26'</span>
+});
+
+<span class="comment">// CS Agent 직접 호출</span>
+<span class="keyword">const</span> csAgent = <span class="keyword">new</span> <span class="function">CSAgent</span>();
+<span class="keyword">const</span> tickets = <span class="keyword">await</span> csAgent.<span class="function">execute</span>({
+  action: <span class="string">'getOpenTickets'</span>
+});
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <div style="margin-top: 60px; padding-top: 30px; border-top: 1px solid #e5e7eb; text-align: center; color: var(--gray);">
+            <p>썬데이허그 AI 에이전트 시스템 v1.0.0</p>
+            <p>"모든 부모가 일요일 아침처럼 평화로운 육아를 경험하게 합니다"</p>
+        </div>
+    </main>
+
+    <script>
+        // Collapsible toggle
+        function toggleCollapsible(header) {
+            const collapsible = header.parentElement;
+            collapsible.classList.toggle('open');
+        }
+
+        // Active navigation
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('nav a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href');
+                const target = document.querySelector(targetId);
+                target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>

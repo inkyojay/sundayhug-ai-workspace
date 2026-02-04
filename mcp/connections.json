@@ -1,0 +1,971 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/connections.json",
+  "version": "1.0.0",
+  "name": "sundayhug-ai-agent-mcp",
+  "description": "썬데이허그 AI 에이전트 시스템 MCP 연결 설정",
+  "connections": {
+    "core": {
+      "supabase": {
+        "name": "Supabase",
+        "description": "PostgreSQL 데이터베이스 및 실시간 구독, 인증 서비스",
+        "type": "package",
+        "package": "@supabase/mcp-server",
+        "base_url": "${SUPABASE_URL}",
+        "auth": {
+          "type": "bearer",
+          "token_env": "SUPABASE_SERVICE_ROLE_KEY"
+        },
+        "tools": [
+          {
+            "name": "query",
+            "description": "SQL 쿼리 실행"
+          },
+          {
+            "name": "insert",
+            "description": "데이터 삽입"
+          },
+          {
+            "name": "update",
+            "description": "데이터 업데이트"
+          },
+          {
+            "name": "delete",
+            "description": "데이터 삭제"
+          },
+          {
+            "name": "rpc",
+            "description": "저장 프로시저 호출"
+          },
+          {
+            "name": "realtime_subscribe",
+            "description": "실시간 변경 구독"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_second": 100,
+          "burst": 200
+        },
+        "agents": ["order-agent", "cs-agent", "analytics-agent", "marketing-agent", "inventory-agent"]
+      },
+      "notion": {
+        "name": "Notion",
+        "description": "문서 관리, 지식베이스, 작업 관리",
+        "type": "package",
+        "package": "@notionhq/mcp-server",
+        "base_url": "https://api.notion.com/v1",
+        "auth": {
+          "type": "bearer",
+          "token_env": "NOTION_API_KEY"
+        },
+        "tools": [
+          {
+            "name": "search",
+            "description": "페이지 및 데이터베이스 검색"
+          },
+          {
+            "name": "get_page",
+            "description": "페이지 내용 조회"
+          },
+          {
+            "name": "create_page",
+            "description": "새 페이지 생성"
+          },
+          {
+            "name": "update_page",
+            "description": "페이지 업데이트"
+          },
+          {
+            "name": "query_database",
+            "description": "데이터베이스 쿼리"
+          },
+          {
+            "name": "append_block",
+            "description": "블록 추가"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_second": 3,
+          "burst": 10
+        },
+        "agents": ["cs-agent", "analytics-agent", "marketing-agent"],
+        "config": {
+          "databases": {
+            "knowledge_base": "${NOTION_KNOWLEDGE_BASE_ID}",
+            "faq": "${NOTION_FAQ_DATABASE_ID}",
+            "product_info": "${NOTION_PRODUCT_INFO_ID}"
+          }
+        }
+      },
+      "slack": {
+        "name": "Slack",
+        "description": "팀 알림 및 내부 커뮤니케이션",
+        "type": "package",
+        "package": "@slack/mcp-server",
+        "base_url": "https://slack.com/api",
+        "auth": {
+          "type": "oauth2",
+          "token_env": "SLACK_BOT_TOKEN",
+          "scopes": ["chat:write", "channels:read", "users:read", "files:write"]
+        },
+        "tools": [
+          {
+            "name": "send_message",
+            "description": "메시지 전송"
+          },
+          {
+            "name": "upload_file",
+            "description": "파일 업로드"
+          },
+          {
+            "name": "get_channel_history",
+            "description": "채널 히스토리 조회"
+          },
+          {
+            "name": "add_reaction",
+            "description": "리액션 추가"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_minute": 50,
+          "burst": 20
+        },
+        "agents": ["order-agent", "cs-agent", "analytics-agent", "marketing-agent", "inventory-agent"],
+        "config": {
+          "channels": {
+            "orders": "${SLACK_ORDERS_CHANNEL}",
+            "cs_alerts": "${SLACK_CS_CHANNEL}",
+            "marketing": "${SLACK_MARKETING_CHANNEL}",
+            "inventory": "${SLACK_INVENTORY_CHANNEL}",
+            "general": "${SLACK_GENERAL_CHANNEL}"
+          }
+        }
+      },
+      "kakao": {
+        "name": "Kakao",
+        "description": "카카오 알림톡/친구톡 발송",
+        "type": "custom",
+        "base_url": "https://kapi.kakao.com",
+        "auth": {
+          "type": "bearer",
+          "token_env": "KAKAO_API_KEY"
+        },
+        "tools": [
+          {
+            "name": "send_alimtalk",
+            "description": "알림톡 발송"
+          },
+          {
+            "name": "send_friendtalk",
+            "description": "친구톡 발송"
+          },
+          {
+            "name": "get_template_list",
+            "description": "템플릿 목록 조회"
+          },
+          {
+            "name": "get_send_result",
+            "description": "발송 결과 조회"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_second": 100,
+          "daily_limit": 100000
+        },
+        "agents": ["order-agent", "cs-agent", "marketing-agent"],
+        "config": {
+          "sender_key": "${KAKAO_SENDER_KEY}",
+          "templates": {
+            "order_confirm": "ORDER_CONFIRM_001",
+            "shipping_start": "SHIPPING_START_001",
+            "delivery_complete": "DELIVERY_COMPLETE_001",
+            "cs_response": "CS_RESPONSE_001"
+          }
+        }
+      }
+    },
+    "ecommerce": {
+      "coupang": {
+        "name": "Coupang Wing",
+        "description": "쿠팡 오픈마켓 API - 주문, 상품, Q&A, 리뷰 관리",
+        "type": "custom",
+        "base_url": "https://api-gateway.coupang.com",
+        "auth": {
+          "type": "hmac",
+          "access_key_env": "COUPANG_ACCESS_KEY",
+          "secret_key_env": "COUPANG_SECRET_KEY",
+          "algorithm": "HmacSHA256"
+        },
+        "tools": [
+          {
+            "name": "get_orders",
+            "description": "주문 목록 조회",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/ordersheets"
+          },
+          {
+            "name": "get_order_detail",
+            "description": "주문 상세 조회",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/ordersheets/{shipmentBoxId}"
+          },
+          {
+            "name": "confirm_order",
+            "description": "주문 확인 처리",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/ordersheets/acknowledgement"
+          },
+          {
+            "name": "ship_order",
+            "description": "발송 처리",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/ordersheets/invoices"
+          },
+          {
+            "name": "get_products",
+            "description": "상품 목록 조회",
+            "endpoint": "/v2/providers/seller_api/apis/api/v1/marketplace/seller-products"
+          },
+          {
+            "name": "update_product",
+            "description": "상품 정보 수정",
+            "endpoint": "/v2/providers/seller_api/apis/api/v1/marketplace/seller-products"
+          },
+          {
+            "name": "update_inventory",
+            "description": "재고 수량 수정",
+            "endpoint": "/v2/providers/seller_api/apis/api/v1/marketplace/seller-products/{sellerProductId}/items/{itemId}/quantities/{quantityType}"
+          },
+          {
+            "name": "get_qna_list",
+            "description": "고객 Q&A 목록 조회",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/product-qnas"
+          },
+          {
+            "name": "answer_qna",
+            "description": "Q&A 답변 등록",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/product-qnas/{inquiryId}/reply"
+          },
+          {
+            "name": "get_reviews",
+            "description": "상품 리뷰 조회",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/product-reviews"
+          },
+          {
+            "name": "get_return_requests",
+            "description": "반품 요청 조회",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/returns"
+          },
+          {
+            "name": "process_return",
+            "description": "반품 처리",
+            "endpoint": "/v2/providers/openapi/apis/api/v4/vendors/{vendorId}/returns/{receiptId}"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_minute": 60,
+          "daily_limit": 10000
+        },
+        "agents": ["order-agent", "cs-agent", "inventory-agent"],
+        "config": {
+          "vendor_id": "${COUPANG_VENDOR_ID}",
+          "webhook_url": "${COUPANG_WEBHOOK_URL}"
+        }
+      },
+      "naver": {
+        "name": "Naver Commerce",
+        "description": "네이버 스마트스토어 API - 주문, 상품, 톡톡 관리",
+        "type": "custom",
+        "base_url": "https://api.commerce.naver.com",
+        "auth": {
+          "type": "oauth2",
+          "client_id_env": "NAVER_CLIENT_ID",
+          "client_secret_env": "NAVER_CLIENT_SECRET",
+          "token_url": "https://api.commerce.naver.com/external/v1/oauth2/token",
+          "grant_type": "client_credentials"
+        },
+        "tools": [
+          {
+            "name": "get_orders",
+            "description": "주문 목록 조회",
+            "endpoint": "/external/v1/pay-order/seller/orders"
+          },
+          {
+            "name": "get_order_detail",
+            "description": "주문 상세 조회",
+            "endpoint": "/external/v1/pay-order/seller/orders/{orderId}"
+          },
+          {
+            "name": "confirm_order",
+            "description": "발주 확인",
+            "endpoint": "/external/v1/pay-order/seller/orders/{orderId}/claim/confirm"
+          },
+          {
+            "name": "ship_order",
+            "description": "발송 처리",
+            "endpoint": "/external/v1/pay-order/seller/orders/{orderId}/ship"
+          },
+          {
+            "name": "get_products",
+            "description": "상품 목록 조회",
+            "endpoint": "/external/v2/products"
+          },
+          {
+            "name": "get_product_detail",
+            "description": "상품 상세 조회",
+            "endpoint": "/external/v2/products/{productNo}"
+          },
+          {
+            "name": "update_product",
+            "description": "상품 정보 수정",
+            "endpoint": "/external/v2/products/{productNo}"
+          },
+          {
+            "name": "update_inventory",
+            "description": "재고 수량 수정",
+            "endpoint": "/external/v2/products/{productNo}/options/stock"
+          },
+          {
+            "name": "get_talktalk_messages",
+            "description": "톡톡 메시지 조회",
+            "endpoint": "/external/v1/pay-chat/seller/rooms"
+          },
+          {
+            "name": "send_talktalk_message",
+            "description": "톡톡 메시지 발송",
+            "endpoint": "/external/v1/pay-chat/seller/rooms/{roomId}/messages"
+          },
+          {
+            "name": "get_qna_list",
+            "description": "상품 문의 조회",
+            "endpoint": "/external/v1/contents/qnas"
+          },
+          {
+            "name": "answer_qna",
+            "description": "상품 문의 답변",
+            "endpoint": "/external/v1/contents/qnas/{qnaId}/answer"
+          },
+          {
+            "name": "get_reviews",
+            "description": "상품 리뷰 조회",
+            "endpoint": "/external/v1/contents/reviews"
+          },
+          {
+            "name": "get_claims",
+            "description": "클레임(취소/반품/교환) 조회",
+            "endpoint": "/external/v1/pay-order/seller/claims"
+          },
+          {
+            "name": "process_claim",
+            "description": "클레임 처리",
+            "endpoint": "/external/v1/pay-order/seller/claims/{claimId}"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_second": 10,
+          "daily_limit": 50000
+        },
+        "agents": ["order-agent", "cs-agent", "inventory-agent"],
+        "config": {
+          "account_id": "${NAVER_ACCOUNT_ID}",
+          "channel_id": "${NAVER_CHANNEL_ID}",
+          "webhook_url": "${NAVER_WEBHOOK_URL}"
+        }
+      },
+      "cafe24": {
+        "name": "Cafe24",
+        "description": "Cafe24 자사몰 API - 주문, 상품, 고객 관리",
+        "type": "custom",
+        "base_url": "https://${CAFE24_MALL_ID}.cafe24api.com/api/v2",
+        "auth": {
+          "type": "oauth2",
+          "client_id_env": "CAFE24_CLIENT_ID",
+          "client_secret_env": "CAFE24_CLIENT_SECRET",
+          "token_url": "https://${CAFE24_MALL_ID}.cafe24api.com/api/v2/oauth/token",
+          "grant_type": "authorization_code",
+          "refresh_enabled": true
+        },
+        "tools": [
+          {
+            "name": "get_orders",
+            "description": "주문 목록 조회",
+            "endpoint": "/admin/orders"
+          },
+          {
+            "name": "get_order_detail",
+            "description": "주문 상세 조회",
+            "endpoint": "/admin/orders/{orderId}"
+          },
+          {
+            "name": "update_order_status",
+            "description": "주문 상태 변경",
+            "endpoint": "/admin/orders/{orderId}"
+          },
+          {
+            "name": "get_products",
+            "description": "상품 목록 조회",
+            "endpoint": "/admin/products"
+          },
+          {
+            "name": "get_product_detail",
+            "description": "상품 상세 조회",
+            "endpoint": "/admin/products/{productNo}"
+          },
+          {
+            "name": "update_product",
+            "description": "상품 정보 수정",
+            "endpoint": "/admin/products/{productNo}"
+          },
+          {
+            "name": "update_inventory",
+            "description": "재고 수량 수정",
+            "endpoint": "/admin/products/{productNo}/variants/{variantCode}/inventories"
+          },
+          {
+            "name": "get_customers",
+            "description": "고객 목록 조회",
+            "endpoint": "/admin/customers"
+          },
+          {
+            "name": "get_customer_detail",
+            "description": "고객 상세 조회",
+            "endpoint": "/admin/customers/{memberId}"
+          },
+          {
+            "name": "get_customer_orders",
+            "description": "고객 주문 이력 조회",
+            "endpoint": "/admin/customers/{memberId}/orders"
+          },
+          {
+            "name": "get_boards",
+            "description": "게시판 목록 조회",
+            "endpoint": "/admin/boards"
+          },
+          {
+            "name": "get_board_articles",
+            "description": "게시글 목록 조회",
+            "endpoint": "/admin/boards/{boardNo}/articles"
+          },
+          {
+            "name": "create_board_reply",
+            "description": "게시글 답변 등록",
+            "endpoint": "/admin/boards/{boardNo}/articles/{articleNo}/comments"
+          },
+          {
+            "name": "get_claims",
+            "description": "클레임 목록 조회",
+            "endpoint": "/admin/cancellation"
+          },
+          {
+            "name": "process_refund",
+            "description": "환불 처리",
+            "endpoint": "/admin/orders/{orderId}/refund"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_second": 5,
+          "daily_limit": 30000,
+          "leaky_bucket": true
+        },
+        "agents": ["order-agent", "cs-agent", "inventory-agent"],
+        "config": {
+          "mall_id": "${CAFE24_MALL_ID}",
+          "shop_no": 1,
+          "webhook_url": "${CAFE24_WEBHOOK_URL}"
+        }
+      }
+    },
+    "marketing": {
+      "meta": {
+        "name": "Meta Business",
+        "description": "페이스북/인스타그램 광고 및 마케팅 API",
+        "type": "custom",
+        "base_url": "https://graph.facebook.com/v18.0",
+        "auth": {
+          "type": "oauth2",
+          "access_token_env": "META_ACCESS_TOKEN",
+          "app_id_env": "META_APP_ID",
+          "app_secret_env": "META_APP_SECRET"
+        },
+        "tools": [
+          {
+            "name": "get_ad_accounts",
+            "description": "광고 계정 목록 조회",
+            "endpoint": "/me/adaccounts"
+          },
+          {
+            "name": "get_campaigns",
+            "description": "캠페인 목록 조회",
+            "endpoint": "/{adAccountId}/campaigns"
+          },
+          {
+            "name": "get_campaign_insights",
+            "description": "캠페인 성과 분석",
+            "endpoint": "/{campaignId}/insights"
+          },
+          {
+            "name": "create_campaign",
+            "description": "캠페인 생성",
+            "endpoint": "/{adAccountId}/campaigns"
+          },
+          {
+            "name": "update_campaign",
+            "description": "캠페인 수정",
+            "endpoint": "/{campaignId}"
+          },
+          {
+            "name": "get_adsets",
+            "description": "광고 세트 조회",
+            "endpoint": "/{campaignId}/adsets"
+          },
+          {
+            "name": "get_ads",
+            "description": "광고 조회",
+            "endpoint": "/{adsetId}/ads"
+          },
+          {
+            "name": "get_ad_insights",
+            "description": "광고 성과 분석",
+            "endpoint": "/{adId}/insights"
+          },
+          {
+            "name": "get_audiences",
+            "description": "맞춤 타겟 조회",
+            "endpoint": "/{adAccountId}/customaudiences"
+          },
+          {
+            "name": "create_audience",
+            "description": "맞춤 타겟 생성",
+            "endpoint": "/{adAccountId}/customaudiences"
+          },
+          {
+            "name": "get_page_insights",
+            "description": "페이지 인사이트 조회",
+            "endpoint": "/{pageId}/insights"
+          },
+          {
+            "name": "create_post",
+            "description": "페이지 게시물 작성",
+            "endpoint": "/{pageId}/feed"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_hour": 200,
+          "daily_limit": 5000
+        },
+        "agents": ["marketing-agent", "analytics-agent"],
+        "config": {
+          "ad_account_id": "${META_AD_ACCOUNT_ID}",
+          "page_id": "${META_PAGE_ID}",
+          "instagram_account_id": "${META_INSTAGRAM_ID}",
+          "pixel_id": "${META_PIXEL_ID}"
+        }
+      },
+      "naver_ads": {
+        "name": "Naver Search Ads",
+        "description": "네이버 검색광고 API",
+        "type": "custom",
+        "base_url": "https://api.searchad.naver.com",
+        "auth": {
+          "type": "hmac",
+          "access_key_env": "NAVER_ADS_ACCESS_KEY",
+          "secret_key_env": "NAVER_ADS_SECRET_KEY",
+          "customer_id_env": "NAVER_ADS_CUSTOMER_ID",
+          "algorithm": "HmacSHA256"
+        },
+        "tools": [
+          {
+            "name": "get_campaigns",
+            "description": "캠페인 목록 조회",
+            "endpoint": "/ncc/campaigns"
+          },
+          {
+            "name": "get_campaign_detail",
+            "description": "캠페인 상세 조회",
+            "endpoint": "/ncc/campaigns/{campaignId}"
+          },
+          {
+            "name": "update_campaign",
+            "description": "캠페인 수정",
+            "endpoint": "/ncc/campaigns/{campaignId}"
+          },
+          {
+            "name": "get_adgroups",
+            "description": "광고그룹 조회",
+            "endpoint": "/ncc/adgroups"
+          },
+          {
+            "name": "get_keywords",
+            "description": "키워드 조회",
+            "endpoint": "/ncc/keywords"
+          },
+          {
+            "name": "update_keyword_bid",
+            "description": "키워드 입찰가 수정",
+            "endpoint": "/ncc/keywords/{keywordId}"
+          },
+          {
+            "name": "get_ads",
+            "description": "광고 소재 조회",
+            "endpoint": "/ncc/ads"
+          },
+          {
+            "name": "get_stats",
+            "description": "통계 데이터 조회",
+            "endpoint": "/stats"
+          },
+          {
+            "name": "get_estimate_performance",
+            "description": "예상 성과 조회",
+            "endpoint": "/estimate/performance"
+          },
+          {
+            "name": "get_keyword_tool",
+            "description": "키워드 도구 - 연관 키워드",
+            "endpoint": "/keywordstool"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_second": 10,
+          "daily_limit": 50000
+        },
+        "agents": ["marketing-agent", "analytics-agent"],
+        "config": {
+          "customer_id": "${NAVER_ADS_CUSTOMER_ID}"
+        }
+      },
+      "google": {
+        "name": "Google Services",
+        "description": "Google Analytics, Sheets, Ads API",
+        "type": "package",
+        "package": "@anthropic/google-mcp-server",
+        "auth": {
+          "type": "oauth2",
+          "credentials_env": "GOOGLE_SERVICE_ACCOUNT_JSON",
+          "scopes": [
+            "https://www.googleapis.com/auth/analytics.readonly",
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/adwords"
+          ]
+        },
+        "services": {
+          "analytics": {
+            "base_url": "https://analyticsdata.googleapis.com/v1beta",
+            "tools": [
+              {
+                "name": "run_report",
+                "description": "GA4 리포트 실행",
+                "endpoint": "/properties/{propertyId}:runReport"
+              },
+              {
+                "name": "get_realtime_report",
+                "description": "실시간 리포트 조회",
+                "endpoint": "/properties/{propertyId}:runRealtimeReport"
+              },
+              {
+                "name": "get_metadata",
+                "description": "메타데이터 조회",
+                "endpoint": "/properties/{propertyId}/metadata"
+              }
+            ]
+          },
+          "sheets": {
+            "base_url": "https://sheets.googleapis.com/v4",
+            "tools": [
+              {
+                "name": "get_spreadsheet",
+                "description": "스프레드시트 조회",
+                "endpoint": "/spreadsheets/{spreadsheetId}"
+              },
+              {
+                "name": "get_values",
+                "description": "셀 값 조회",
+                "endpoint": "/spreadsheets/{spreadsheetId}/values/{range}"
+              },
+              {
+                "name": "update_values",
+                "description": "셀 값 업데이트",
+                "endpoint": "/spreadsheets/{spreadsheetId}/values/{range}"
+              },
+              {
+                "name": "append_values",
+                "description": "행 추가",
+                "endpoint": "/spreadsheets/{spreadsheetId}/values/{range}:append"
+              },
+              {
+                "name": "batch_update",
+                "description": "일괄 업데이트",
+                "endpoint": "/spreadsheets/{spreadsheetId}:batchUpdate"
+              }
+            ]
+          },
+          "ads": {
+            "base_url": "https://googleads.googleapis.com/v14",
+            "tools": [
+              {
+                "name": "search_campaigns",
+                "description": "캠페인 검색",
+                "endpoint": "/customers/{customerId}/googleAds:search"
+              },
+              {
+                "name": "get_campaign_metrics",
+                "description": "캠페인 지표 조회",
+                "endpoint": "/customers/{customerId}/googleAds:search"
+              },
+              {
+                "name": "mutate_campaigns",
+                "description": "캠페인 수정",
+                "endpoint": "/customers/{customerId}/campaigns:mutate"
+              }
+            ]
+          }
+        },
+        "rate_limit": {
+          "analytics": {
+            "requests_per_day": 50000,
+            "requests_per_minute": 600
+          },
+          "sheets": {
+            "requests_per_minute": 60,
+            "requests_per_user_per_100_seconds": 100
+          },
+          "ads": {
+            "requests_per_day": 15000
+          }
+        },
+        "agents": ["analytics-agent", "marketing-agent"],
+        "config": {
+          "analytics_property_id": "${GA4_PROPERTY_ID}",
+          "ads_customer_id": "${GOOGLE_ADS_CUSTOMER_ID}",
+          "spreadsheets": {
+            "sales_report": "${GOOGLE_SHEET_SALES_ID}",
+            "inventory": "${GOOGLE_SHEET_INVENTORY_ID}",
+            "marketing": "${GOOGLE_SHEET_MARKETING_ID}"
+          }
+        }
+      }
+    },
+    "utilities": {
+      "openai": {
+        "name": "OpenAI",
+        "description": "이미지 생성 (DALL-E) 및 보조 AI 기능",
+        "type": "custom",
+        "base_url": "https://api.openai.com/v1",
+        "auth": {
+          "type": "bearer",
+          "token_env": "OPENAI_API_KEY"
+        },
+        "tools": [
+          {
+            "name": "generate_image",
+            "description": "DALL-E 이미지 생성",
+            "endpoint": "/images/generations",
+            "config": {
+              "model": "dall-e-3",
+              "size": "1024x1024",
+              "quality": "standard"
+            }
+          },
+          {
+            "name": "edit_image",
+            "description": "이미지 편집",
+            "endpoint": "/images/edits"
+          },
+          {
+            "name": "create_variation",
+            "description": "이미지 변형 생성",
+            "endpoint": "/images/variations"
+          },
+          {
+            "name": "text_to_speech",
+            "description": "텍스트 음성 변환",
+            "endpoint": "/audio/speech"
+          },
+          {
+            "name": "transcribe_audio",
+            "description": "음성 텍스트 변환",
+            "endpoint": "/audio/transcriptions"
+          }
+        ],
+        "rate_limit": {
+          "requests_per_minute": 50,
+          "images_per_minute": 5
+        },
+        "agents": ["marketing-agent", "cs-agent"],
+        "config": {
+          "default_image_model": "dall-e-3",
+          "default_image_size": "1024x1024"
+        }
+      },
+      "delivery": {
+        "name": "Delivery Tracking",
+        "description": "택배사 배송 조회 및 관리 API",
+        "type": "custom",
+        "providers": {
+          "cj": {
+            "name": "CJ대한통운",
+            "base_url": "https://www.cjlogistics.com/ko/tool/parcel",
+            "api_url": "https://api.cjlogistics.com/v1",
+            "auth": {
+              "type": "bearer",
+              "token_env": "CJ_LOGISTICS_API_KEY"
+            },
+            "carrier_code": "CJ"
+          },
+          "lotte": {
+            "name": "롯데택배",
+            "base_url": "https://www.lotteglogis.com",
+            "api_url": "https://api.lotteglogis.com/v1",
+            "auth": {
+              "type": "bearer",
+              "token_env": "LOTTE_LOGISTICS_API_KEY"
+            },
+            "carrier_code": "LOTTE"
+          },
+          "hanjin": {
+            "name": "한진택배",
+            "base_url": "https://www.hanjin.com",
+            "api_url": "https://api.hanjin.com/v1",
+            "auth": {
+              "type": "bearer",
+              "token_env": "HANJIN_API_KEY"
+            },
+            "carrier_code": "HANJIN"
+          },
+          "logen": {
+            "name": "로젠택배",
+            "base_url": "https://www.ilogen.com",
+            "api_url": "https://api.ilogen.com/v1",
+            "auth": {
+              "type": "bearer",
+              "token_env": "LOGEN_API_KEY"
+            },
+            "carrier_code": "LOGEN"
+          },
+          "epost": {
+            "name": "우체국택배",
+            "base_url": "https://www.epost.go.kr",
+            "api_url": "https://api.epost.go.kr/v1",
+            "auth": {
+              "type": "bearer",
+              "token_env": "EPOST_API_KEY"
+            },
+            "carrier_code": "EPOST"
+          }
+        },
+        "tools": [
+          {
+            "name": "track_shipment",
+            "description": "배송 조회",
+            "params": ["carrier_code", "tracking_number"]
+          },
+          {
+            "name": "register_shipment",
+            "description": "배송 등록",
+            "params": ["carrier_code", "sender", "receiver", "items"]
+          },
+          {
+            "name": "get_shipping_rates",
+            "description": "배송비 조회",
+            "params": ["carrier_code", "origin", "destination", "weight"]
+          },
+          {
+            "name": "schedule_pickup",
+            "description": "픽업 예약",
+            "params": ["carrier_code", "pickup_address", "pickup_date"]
+          },
+          {
+            "name": "cancel_shipment",
+            "description": "배송 취소",
+            "params": ["carrier_code", "tracking_number"]
+          },
+          {
+            "name": "get_delivery_estimate",
+            "description": "예상 배송일 조회",
+            "params": ["carrier_code", "origin", "destination"]
+          }
+        ],
+        "unified_tracking": {
+          "enabled": true,
+          "fallback_service": "sweet_tracker",
+          "sweet_tracker_api_key_env": "SWEET_TRACKER_API_KEY"
+        },
+        "rate_limit": {
+          "requests_per_minute": 100
+        },
+        "agents": ["order-agent", "cs-agent"],
+        "config": {
+          "default_carrier": "CJ",
+          "auto_detect_carrier": true,
+          "webhook_url": "${DELIVERY_WEBHOOK_URL}"
+        }
+      }
+    }
+  },
+  "global_settings": {
+    "timeout_ms": 30000,
+    "retry": {
+      "max_attempts": 3,
+      "backoff_multiplier": 2,
+      "initial_delay_ms": 1000
+    },
+    "logging": {
+      "level": "info",
+      "include_request_body": false,
+      "include_response_body": false,
+      "mask_sensitive_fields": ["password", "token", "secret", "key", "authorization"]
+    },
+    "cache": {
+      "enabled": true,
+      "default_ttl_seconds": 300,
+      "max_entries": 1000
+    },
+    "circuit_breaker": {
+      "enabled": true,
+      "failure_threshold": 5,
+      "recovery_timeout_ms": 60000
+    }
+  },
+  "agent_permissions": {
+    "order-agent": {
+      "description": "주문 처리 에이전트",
+      "allowed_connections": ["supabase", "coupang", "naver", "cafe24", "delivery", "slack", "kakao"],
+      "permissions": {
+        "read": true,
+        "write": true,
+        "delete": false
+      }
+    },
+    "cs-agent": {
+      "description": "고객 서비스 에이전트",
+      "allowed_connections": ["supabase", "notion", "coupang", "naver", "cafe24", "delivery", "slack", "kakao", "openai"],
+      "permissions": {
+        "read": true,
+        "write": true,
+        "delete": false
+      }
+    },
+    "marketing-agent": {
+      "description": "마케팅 에이전트",
+      "allowed_connections": ["supabase", "notion", "meta", "naver_ads", "google", "slack", "kakao", "openai"],
+      "permissions": {
+        "read": true,
+        "write": true,
+        "delete": false
+      }
+    },
+    "analytics-agent": {
+      "description": "분석 에이전트",
+      "allowed_connections": ["supabase", "notion", "meta", "naver_ads", "google", "slack"],
+      "permissions": {
+        "read": true,
+        "write": false,
+        "delete": false
+      }
+    },
+    "inventory-agent": {
+      "description": "재고 관리 에이전트",
+      "allowed_connections": ["supabase", "coupang", "naver", "cafe24", "slack"],
+      "permissions": {
+        "read": true,
+        "write": true,
+        "delete": false
+      }
+    }
+  }
+}
